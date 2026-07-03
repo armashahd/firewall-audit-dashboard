@@ -8,6 +8,7 @@
     <title>Firewall Security Audit Dashboard</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
 </head>
 
 <body>
@@ -17,77 +18,161 @@
     <div class="row">
 
         <!-- Sidebar -->
-        <div class="col-md-2 bg-dark text-white vh-100 p-3">
+        <div class="col-lg-2 sidebar">
 
-            <h4 class="mb-4">Audit Dashboard</h4>
+            <h3>NTG</h3>
 
-            <div class="list-group">
+            <a th:href="@{/}" class="active">
+                🏠 Dashboard
+            </a>
 
-                <a th:href="@{/}" class="list-group-item list-group-item-action active">
-                    Dashboard
-                </a>
+            <a th:href="@{/sites}">
+                🌍 Sites
+            </a>
 
-                <a th:href="@{/sites}" class="list-group-item list-group-item-action">
-                    Sites
-                </a>
+            <a th:href="@{/findings}">
+                🛡 Findings
+            </a>
 
-                <a th:href="@{/findings}" class="list-group-item list-group-item-action">
-                    Findings
-                </a>
+            <a th:href="@{/reports}">
+                📄 Reports
+            </a>
 
-                <a th:href="@{/reports}" class="list-group-item list-group-item-action">
-                    Reports
-                </a>
-
-                <a th:href="@{/settings}" class="list-group-item list-group-item-action">
-                    Settings
-                </a>
-
-            </div>
+            <a th:href="@{/settings}">
+                ⚙ Settings
+            </a>
 
         </div>
 
         <!-- Main Content -->
-        <div class="col-md-10 p-4 bg-light">
+        <div class="col-lg-10 p-4">
 
-            <h2 class="mb-4">Firewall Security Audit Dashboard</h2>
+            <!-- Top Bar -->
+
+            <div class="topbar d-flex justify-content-between align-items-center">
+
+                <div>
+
+                    <h2 class="mb-0">
+                        Firewall Security Audit Dashboard
+                    </h2>
+
+                    <small class="text-muted">
+                        North Technology Group
+                    </small>
+
+                </div>
+
+                <div>
+
+                    <span class="badge bg-primary p-3">
+                        Administrator
+                    </span>
+
+                </div>
+
+            </div>
+
+            <!-- KPI Cards -->
 
             <div class="row g-4">
 
-                <div class="col-md-3">
-                    <div class="card text-center shadow-sm">
+                <div class="col-lg-3">
+
+                    <div class="card dashboard-card">
+
                         <div class="card-body">
-                            <h6>Overall Score</h6>
-                            <h2>92%</h2>
+
+                            <h6 class="text-muted">
+                                Overall Security Score
+                            </h6>
+
+                            <h2 class="text-primary" th:text="${dashboard.overallSecurityScore + '%'}">
+                                92%
+                            </h2>
+
                         </div>
+
                     </div>
+
                 </div>
 
-                <div class="col-md-3">
-                    <div class="card text-center shadow-sm">
+                <div class="col-lg-3">
+
+                    <div class="card dashboard-card">
+
                         <div class="card-body">
-                            <h6>Open Findings</h6>
-                            <h2>15</h2>
+
+                            <h6 class="text-muted">
+                                Open Findings
+                            </h6>
+
+                            <h2 class="text-danger" th:text="${dashboard.openFindings}">
+                                15
+                            </h2>
+
                         </div>
+
                     </div>
+
                 </div>
 
-                <div class="col-md-3">
-                    <div class="card text-center shadow-sm">
+                <div class="col-lg-3">
+
+                    <div class="card dashboard-card">
+
                         <div class="card-body">
-                            <h6>Closed Findings</h6>
-                            <h2>48</h2>
+
+                            <h6 class="text-muted">
+                                Closed Findings
+                            </h6>
+
+                            <h2 class="text-success" th:text="${dashboard.closedFindings}">
+                                48
+                            </h2>
+
                         </div>
+
                     </div>
+
                 </div>
 
-                <div class="col-md-3">
-                    <div class="card text-center shadow-sm">
+                <div class="col-lg-3">
+
+                    <div class="card dashboard-card">
+
                         <div class="card-body">
-                            <h6>Completion</h6>
-                            <h2>76%</h2>
+
+                            <h6 class="text-muted">
+                                Completion
+                            </h6>
+
+                            <h2 class="text-warning" th:text="${dashboard.completionPercentage + '%'}">
+                                76%
+                            </h2>
+
                         </div>
+
                     </div>
+
+                </div>
+
+            </div>
+
+            <!-- Placeholder -->
+
+            <div class="card dashboard-card mt-4">
+
+                <div class="card-body">
+
+                    <h4>
+                        Security Trend
+                    </h4>
+
+                    <p class="text-muted">
+                        Chart.js graphs will be added here.
+                    </p>
+
                 </div>
 
             </div>
