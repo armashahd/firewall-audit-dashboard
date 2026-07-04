@@ -29,14 +29,26 @@ public class DashboardService {
 
         long totalSites = siteRepository.count();
         long totalAudits = auditRepository.count();
-        long openFindings = findingRepository.countByStatusIn(java.util.List.of(FindingStatus.OPEN, FindingStatus.IN_PROGRESS));
+
+        long openFindings = findingRepository.countByStatusIn(
+                java.util.List.of(FindingStatus.OPEN, FindingStatus.IN_PROGRESS));
+
         long closedFindings = findingRepository.countByStatus(FindingStatus.CLOSED);
+
         long criticalFindings = findingRepository.countBySeverity(Severity.CRITICAL);
         long highFindings = findingRepository.countBySeverity(Severity.HIGH);
         long mediumFindings = findingRepository.countBySeverity(Severity.MEDIUM);
         long lowFindings = findingRepository.countBySeverity(Severity.LOW);
 
-        dto.setOverallSecurityScore((int) Math.round(siteRepository.averageSecurityScore()));
+        Double averageScore = siteRepository.averageSecurityScore();
+        Double averageCompletion = auditRepository.averageCompletionPercentage();
+
+        dto.setOverallSecurityScore(
+                averageScore != null ? (int) Math.round(averageScore) : 0);
+
+        dto.setCompletionPercentage(
+                averageCompletion != null ? (int) Math.round(averageCompletion) : 0);
+
         dto.setTotalSites(totalSites);
         dto.setTotalAudits(totalAudits);
         dto.setOpenFindings(openFindings);
@@ -45,7 +57,6 @@ public class DashboardService {
         dto.setHighFindings(highFindings);
         dto.setMediumFindings(mediumFindings);
         dto.setLowFindings(lowFindings);
-        dto.setCompletionPercentage((int) Math.round(auditRepository.averageCompletionPercentage()));
 
         return dto;
     }
