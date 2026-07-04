@@ -28,7 +28,9 @@ public class SiteService {
     }
 
     public void deleteSite(Long id) {
-        siteRepository.deleteById(id);
+        if (id != null && siteRepository.existsById(id)) {
+            siteRepository.deleteById(id);
+        }
     }
 
 }

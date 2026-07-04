@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${formTitle}">Audit Form</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: layout('audits', ${formTitle}, 'Create or update an audit linked to a site.', ~{::content})}">
+    <section th:fragment="content">
+        <div class="card dashboard-card">
+            <div class="card-body p-4 p-lg-5">
+                <div th:if="${errorMessage}" class="alert alert-danger" role="alert" th:text="${errorMessage}"></div>
+                <form th:action="@{/audits}" th:object="${audit}" method="post" class="row g-3">
+                    <input type="hidden" th:field="*{id}">
+                    <div class="col-md-6">
+                        <label class="form-label">Site</label>
+                        <select class="form-select" name="siteId" th:classappend="${siteError} ? ' is-invalid' : ''">
+                            <option value="">Select a site</option>
+                            <option th:each="site : ${sites}" th:value="${site.id}" th:text="${site.name}" th:selected="${selectedSiteId != null and selectedSiteId == site.id}"></option>
+                        </select>
+                        <div class="invalid-feedback d-block" th:if="${siteError}" th:text="${siteError}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Audit Round</label>
+                        <input type="number" min="1" class="form-control" th:field="*{auditRound}" th:classappend="${auditRoundError} ? ' is-invalid' : ''" placeholder="1">
+                        <div class="invalid-feedback d-block" th:if="${auditRoundError}" th:text="${auditRoundError}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Audit Date</label>
+                        <input type="date" class="form-control" name="auditDate" th:value="${audit.auditDate != null ? #temporals.format(audit.auditDate, 'yyyy-MM-dd') : ''}" th:classappend="${auditDateError} ? ' is-invalid' : ''">
+                        <div class="invalid-feedback d-block" th:if="${auditDateError}" th:text="${auditDateError}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Auditor</label>
+                        <input type="text" class="form-control" th:field="*{auditor}" th:classappend="${auditorError} ? ' is-invalid' : ''" placeholder="Jane Doe">
+                        <div class="invalid-feedback d-block" th:if="${auditorError}" th:text="${auditorError}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Overall Score</label>
+                        <input type="number" min="0" max="100" class="form-control" th:field="*{overallScore}" th:classappend="${overallScoreError} ? ' is-invalid' : ''" placeholder="92">
+                        <div class="invalid-feedback d-block" th:if="${overallScoreError}" th:text="${overallScoreError}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Completion Percentage</label>
+                        <input type="number" min="0" max="100" class="form-control" th:field="*{completionPercentage}" th:classappend="${completionPercentageError} ? ' is-invalid' : ''" placeholder="76">
+                        <div class="invalid-feedback d-block" th:if="${completionPercentageError}" th:text="${completionPercentageError}"></div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Remarks</label>
+                        <textarea rows="5" class="form-control" th:field="*{remarks}" th:classappend="${remarksError} ? ' is-invalid' : ''" placeholder="Audit notes and observations"></textarea>
+                        <div class="invalid-feedback d-block" th:if="${remarksError}" th:text="${remarksError}"></div>
+                    </div>
+                    <div class="col-12 d-flex flex-wrap gap-2 pt-2">
+                        <button type="submit" class="btn btn-primary" th:text="${submitLabel}">Save Audit</button>
+                        <a th:href="@{/audits}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>

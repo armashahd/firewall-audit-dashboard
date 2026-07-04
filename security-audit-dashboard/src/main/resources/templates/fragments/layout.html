@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="layout(activeNav, pageTitle, pageSubtitle, content)" class="app-shell">
+    <aside class="app-sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-mark">NTG</div>
+            <div>
+                <div class="brand-title">Firewall Audit</div>
+                <div class="brand-subtitle">Enterprise Console</div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a th:href="@{/}" class="nav-link" th:classappend="${activeNav == 'dashboard'} ? ' active' : ''">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5 12 5l8 7.5V20a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg>
+                </span>
+                <span>Dashboard</span>
+            </a>
+            <a th:href="@{/sites}" class="nav-link" th:classappend="${activeNav == 'sites'} ? ' active' : ''">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21V3h18v18zm4-2h3v-4H7zm5 0h3V8h-3zm5 0h3v-7h-3z"/></svg>
+                </span>
+                <span>Sites</span>
+            </a>
+            <a th:href="@{/audits}" class="nav-link" th:classappend="${activeNav == 'audits'} ? ' active' : ''">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v14l-4-2-4 2-4-2-4 2V5a2 2 0 0 1 2-2zm1 5h8V6H8zm0 4h8v-2H8zm0 4h5v-2H8z"/></svg>
+                </span>
+                <span>Audits</span>
+            </a>
+            <a th:href="@{/findings}" class="nav-link" th:classappend="${activeNav == 'findings'} ? ' active' : ''">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 2 20h20zM11 9h2v5h-2zm0 6h2v2h-2z"/></svg>
+                </span>
+                <span>Findings</span>
+            </a>
+            <a th:href="@{/reports}" class="nav-link" th:classappend="${activeNav == 'reports'} ? ' active' : ''">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l5 5v15H6zM8 10h8V8H8zm0 4h8v-2H8zm0 4h5v-2H8z"/></svg>
+                </span>
+                <span>Reports</span>
+            </a>
+            <a th:href="@{/settings}" class="nav-link" th:classappend="${activeNav == 'settings'} ? ' active' : ''">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94a7.9 7.9 0 0 0 .06-.94 7.9 7.9 0 0 0-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.3 7.3 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 2h-3.8a.5.5 0 0 0-.49.41l-.36 2.54c-.58.23-1.13.53-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.47a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.62-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.41 1.05.71 1.63.94l.36 2.54a.5.5 0 0 0 .49.41h3.8a.5.5 0 0 0 .49-.41l.36-2.54c.58-.23 1.13-.53 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64zM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5z"/></svg>
+                </span>
+                <span>Settings</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-note">
+            <div class="note-label">Environment</div>
+            <div class="note-value">Internal Security Ops</div>
+        </div>
+    </aside>
+
+    <div class="app-content">
+        <header class="topbar">
+            <div>
+                <div class="page-kicker">Firewall Security Audit Dashboard</div>
+                <h1 class="page-title" th:text="${pageTitle}">Page Title</h1>
+                <div class="page-subtitle" th:text="${pageSubtitle}">Page subtitle</div>
+            </div>
+
+            <div class="topbar-actions">
+                <div class="search-chip">
+                    <span class="search-dot"></span>
+                    Enterprise Console
+                </div>
+                <div class="profile-chip">
+                    <div class="avatar">A</div>
+                    <div>
+                        <div class="profile-name">Administrator</div>
+                        <div class="profile-role">Security Team</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="page-main">
+            <div th:replace="${content}"></div>
+        </main>
+
+        <footer class="app-footer">
+            <div>Firewall Security Audit Dashboard</div>
+            <div>Internal use only • Thymeleaf / Bootstrap / SQLite</div>
+        </footer>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${site.name + ' Details'}">Site Details</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: layout('sites', ${site.name}, 'Detailed view of the selected firewall location.', ~{::content})}">
+    <section th:fragment="content">
+        <div class="page-actions">
+            <div>
+                <h5 class="mb-1">Site Information</h5>
+                <div class="lead">Configuration and lifecycle details for this site.</div>
+            </div>
+            <div class="toolbar-group">
+                <a th:href="@{/sites}" class="btn btn-outline-secondary">Back</a>
+                <a th:href="@{/sites/edit/{id}(id=${site.id})}" class="btn btn-outline-primary">Edit</a>
+                <form th:action="@{/sites/{id}/delete(id=${site.id})}" method="post" onsubmit="return confirm('Delete this site permanently?');">
+                    <button type="submit" class="btn btn-outline-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card dashboard-card">
+            <div class="card-body p-4 p-lg-5">
+                <div class="row g-4">
+                    <div class="col-md-6"><div class="stat-label">Name</div><div class="fw-semibold fs-5" th:text="${site.name}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Country</div><div class="fw-semibold fs-5" th:text="${site.country != null ? site.country : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">City</div><div class="fw-semibold fs-5" th:text="${site.city != null ? site.city : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Firewall Vendor</div><div class="fw-semibold fs-5" th:text="${site.firewallVendor != null ? site.firewallVendor : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Firewall Model</div><div class="fw-semibold fs-5" th:text="${site.firewallModel != null ? site.firewallModel : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Firmware Version</div><div class="fw-semibold fs-5" th:text="${site.firmwareVersion != null ? site.firmwareVersion : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Last Audit Date</div><div class="fw-semibold fs-5" th:text="${site.lastAuditDate != null ? #temporals.format(site.lastAuditDate, 'yyyy-MM-dd') : 'Not recorded'}"></div></div>
+                    <div class="col-md-6">
+                        <div class="stat-label">Security Score</div>
+                        <div><span class="badge bg-primary" th:text="${site.securityScore != null ? site.securityScore + '%' : 'N/A'}"></span></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="stat-label">Status</div>
+                        <div>
+                            <span th:switch="${site.status != null ? site.status.name() : ''}">
+                                <span th:case="'ACTIVE'" class="badge bg-success">Active</span>
+                                <span th:case="'UNDER_AUDIT'" class="badge bg-warning text-dark">Under Audit</span>
+                                <span th:case="'INACTIVE'" class="badge bg-secondary">Inactive</span>
+                                <span th:case="*" class="badge bg-light text-dark border">N/A</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>

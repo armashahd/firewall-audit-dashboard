@@ -1,79 +1,83 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Sites</title>
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
 </head>
-
 <body>
 
-<div class="container mt-5">
+<div th:replace="~{fragments/layout :: layout('sites', 'Sites', 'Manage firewall locations, firmware versions, and security posture.', ~{::content})}">
+    <section th:fragment="content" class="content-grid">
+        <div class="page-actions">
+            <div>
+                <h5 class="mb-1">Registered Sites</h5>
+                <div class="lead">Operational inventory across all monitored locations.</div>
+            </div>
+            <div class="toolbar-group">
+                <a th:href="@{/sites/new}" class="btn btn-primary">Add Site</a>
+            </div>
+        </div>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-
-        <h2>Sites</h2>
-
-        <a th:href="@{/sites/new}" class="btn btn-primary">
-            + Add Site
-        </a>
-
-    </div>
-
-    <table class="table table-bordered table-hover">
-
-        <thead class="table-dark">
-
-        <tr>
-            <th>ID</th>
-            <th>Site Name</th>
-            <th>Country</th>
-            <th>City</th>
-            <th>Firewall</th>
-            <th>Firmware</th>
-            <th>Score</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
-
-        </thead>
-
-        <tbody>
-
-        <tr th:each="site : ${sites}">
-
-            <td th:text="${site.id}"></td>
-
-            <td th:text="${site.name}"></td>
-
-            <td th:text="${site.country}"></td>
-
-            <td th:text="${site.city}"></td>
-
-            <td th:text="${site.firewallModel}"></td>
-
-            <td th:text="${site.firmwareVersion}"></td>
-
-            <td th:text="${site.securityScore}"></td>
-
-            <td th:text="${site.status}"></td>
-
-            <td>
-                <a th:href="@{/sites/edit/{id}(id=${site.id})}" class="btn btn-sm btn-outline-primary">
-                    Edit
-                </a>
-            </td>
-
-        </tr>
-
-        </tbody>
-
-    </table>
-
+        <div class="card dashboard-card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle">
+                        <thead>
+                        <tr>
+                            <th>Site Name</th>
+                            <th>Country</th>
+                            <th>City</th>
+                            <th>Firewall Vendor</th>
+                            <th>Firewall Model</th>
+                            <th>Firmware Version</th>
+                            <th>Last Audit Date</th>
+                            <th>Security Score</th>
+                            <th>Status</th>
+                            <th class="text-nowrap">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(sites)}">
+                            <td colspan="10" class="text-center py-5 text-muted">No sites available yet.</td>
+                        </tr>
+                        <tr th:each="site : ${sites}">
+                            <td>
+                                <a th:href="@{/sites/details/{id}(id=${site.id})}" class="fw-semibold text-decoration-none" th:text="${site.name}"></a>
+                            </td>
+                            <td th:text="${site.country != null ? site.country : '-'}"></td>
+                            <td th:text="${site.city != null ? site.city : '-'}"></td>
+                            <td th:text="${site.firewallVendor != null ? site.firewallVendor : '-'}"></td>
+                            <td th:text="${site.firewallModel != null ? site.firewallModel : '-'}"></td>
+                            <td th:text="${site.firmwareVersion != null ? site.firmwareVersion : '-'}"></td>
+                            <td th:text="${site.lastAuditDate != null ? #temporals.format(site.lastAuditDate, 'yyyy-MM-dd') : '-'}"></td>
+                            <td><span class="badge bg-secondary" th:text="${site.securityScore != null ? site.securityScore + '%' : 'N/A'}"></span></td>
+                            <td>
+                                <span th:switch="${site.status != null ? site.status.name() : ''}">
+                                    <span th:case="'ACTIVE'" class="badge bg-success">Active</span>
+                                    <span th:case="'UNDER_AUDIT'" class="badge bg-warning text-dark">Under Audit</span>
+                                    <span th:case="'INACTIVE'" class="badge bg-secondary">Inactive</span>
+                                    <span th:case="*" class="badge bg-light text-dark border">N/A</span>
+                                </span>
+                            </td>
+                            <td class="text-nowrap">
+                                <div class="btn-group btn-group-sm">
+                                    <a th:href="@{/sites/details/{id}(id=${site.id})}" class="btn btn-outline-secondary">View</a>
+                                    <a th:href="@{/sites/edit/{id}(id=${site.id})}" class="btn btn-outline-primary">Edit</a>
+                                    <form th:action="@{/sites/{id}/delete(id=${site.id})}" method="post" class="d-inline" onsubmit="return confirm('Delete this site permanently?');">
+                                        <button type="submit" class="btn btn-outline-danger">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
 </div>
-
 </body>
-
 </html>

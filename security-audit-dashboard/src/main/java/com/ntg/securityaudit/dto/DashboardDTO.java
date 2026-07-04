@@ -6,6 +6,8 @@ public class DashboardDTO {
 
     private Long totalSites;
 
+    private Long totalAudits;
+
     private Long openFindings;
 
     private Long closedFindings;
@@ -37,6 +39,14 @@ public class DashboardDTO {
 
     public void setTotalSites(Long totalSites) {
         this.totalSites = totalSites;
+    }
+
+    public Long getTotalAudits() {
+        return totalAudits;
+    }
+
+    public void setTotalAudits(Long totalAudits) {
+        this.totalAudits = totalAudits;
     }
 
     public Long getOpenFindings() {

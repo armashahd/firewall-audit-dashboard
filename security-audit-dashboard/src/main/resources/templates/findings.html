@@ -1,105 +1,86 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <title>Firewall Security Audit Dashboard</title>
-
+    <title>Findings</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
 </head>
-
 <body>
 
-<div class="container-fluid">
-
-    <div class="row">
-
-        <!-- Sidebar -->
-        <div class="col-md-2 bg-dark text-white vh-100 p-3">
-
-            <h4 class="mb-4">Audit Dashboard</h4>
-
-            <div class="list-group">
-
-                <a th:href="@{/}" class="list-group-item list-group-item-action active">
-                    Dashboard
-                </a>
-
-                <a th:href="@{/sites}" class="list-group-item list-group-item-action">
-                    Sites
-                </a>
-
-                <a th:href="@{/findings}" class="list-group-item list-group-item-action">
-                    Findings
-                </a>
-
-                <a th:href="@{/reports}" class="list-group-item list-group-item-action">
-                    Reports
-                </a>
-
-                <a th:href="@{/settings}" class="list-group-item list-group-item-action">
-                    Settings
-                </a>
-
+<div th:replace="~{fragments/layout :: layout('findings', 'Findings', 'Manage and track security findings across audits.', ~{::content})}">
+    <section th:fragment="content" class="content-grid">
+        <div class="page-actions">
+            <div>
+                <h5 class="mb-1">Finding Register</h5>
+                <div class="lead">Risk items are linked to an audit and managed through closure.</div>
             </div>
-
+            <div class="toolbar-group">
+                <a th:href="@{/findings/new}" class="btn btn-primary">Add Finding</a>
+            </div>
         </div>
 
-        <!-- Main Content -->
-        <div class="col-md-10 p-4 bg-light">
-
-            <h2 class="mb-4">Firewall Security Audit Dashboard</h2>
-
-            <div class="row g-4">
-
-                <div class="col-md-3">
-                    <div class="card text-center shadow-sm">
-                        <div class="card-body">
-                            <h6>Overall Score</h6>
-                            <h2>92%</h2>
-                        </div>
-                    </div>
+        <div class="card dashboard-card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle">
+                        <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Audit</th>
+                            <th>Severity</th>
+                            <th>Status</th>
+                            <th>Category</th>
+                            <th>Assigned To</th>
+                            <th>Due Date</th>
+                            <th class="text-nowrap">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(findings)}">
+                            <td colspan="8" class="text-center py-5 text-muted">No findings found.</td>
+                        </tr>
+                        <tr th:each="finding : ${findings}">
+                            <td><a th:href="@{/findings/details/{id}(id=${finding.id})}" class="fw-semibold text-decoration-none" th:text="${finding.title}"></a></td>
+                            <td th:text="${finding.audit != null ? (finding.audit.site != null ? finding.audit.site.name + ' / #' + finding.audit.id : '#' + finding.audit.id) : '-'}"></td>
+                            <td>
+                                <span th:switch="${finding.severity != null ? finding.severity.name() : ''}">
+                                    <span th:case="'CRITICAL'" class="badge bg-danger">Critical</span>
+                                    <span th:case="'HIGH'" class="badge bg-warning text-dark">High</span>
+                                    <span th:case="'MEDIUM'" class="badge bg-info text-dark">Medium</span>
+                                    <span th:case="'LOW'" class="badge bg-success">Low</span>
+                                    <span th:case="*" class="badge bg-light text-dark border">N/A</span>
+                                </span>
+                            </td>
+                            <td>
+                                <span th:switch="${finding.status != null ? finding.status.name() : ''}">
+                                    <span th:case="'OPEN'" class="badge bg-danger">Open</span>
+                                    <span th:case="'IN_PROGRESS'" class="badge bg-warning text-dark">In Progress</span>
+                                    <span th:case="'CLOSED'" class="badge bg-success">Closed</span>
+                                    <span th:case="'ACCEPTED_RISK'" class="badge bg-secondary">Accepted Risk</span>
+                                    <span th:case="*" class="badge bg-light text-dark border">N/A</span>
+                                </span>
+                            </td>
+                            <td th:text="${finding.category != null ? finding.category : '-'}"></td>
+                            <td th:text="${finding.assignedTo != null ? finding.assignedTo : '-'}"></td>
+                            <td th:text="${finding.dueDate != null ? #temporals.format(finding.dueDate, 'yyyy-MM-dd') : '-'}"></td>
+                            <td class="text-nowrap">
+                                <div class="btn-group btn-group-sm">
+                                    <a th:href="@{/findings/details/{id}(id=${finding.id})}" class="btn btn-outline-secondary">View</a>
+                                    <a th:href="@{/findings/edit/{id}(id=${finding.id})}" class="btn btn-outline-primary">Edit</a>
+                                    <form th:action="@{/findings/{id}/delete(id=${finding.id})}" method="post" class="d-inline" onsubmit="return confirm('Delete this finding permanently?');">
+                                        <button type="submit" class="btn btn-outline-danger">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
-
-                <div class="col-md-3">
-                    <div class="card text-center shadow-sm">
-                        <div class="card-body">
-                            <h6>Open Findings</h6>
-                            <h2>15</h2>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="card text-center shadow-sm">
-                        <div class="card-body">
-                            <h6>Closed Findings</h6>
-                            <h2>48</h2>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="card text-center shadow-sm">
-                        <div class="card-body">
-                            <h6>Completion</h6>
-                            <h2>76%</h2>
-                        </div>
-                    </div>
-                </div>
-
             </div>
-
         </div>
-
-    </div>
-
+    </section>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
-
 </body>
-
 </html>

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${formTitle}">Report Form</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: layout('reports', ${formTitle}, 'Create or update report metadata.', ~{::content})}">
+    <section th:fragment="content">
+        <div class="card dashboard-card">
+            <div class="card-body p-4 p-lg-5">
+                <div th:if="${errorMessage}" class="alert alert-danger" role="alert" th:text="${errorMessage}"></div>
+                <form th:action="@{/reports}" th:object="${report}" method="post" class="row g-3">
+                    <input type="hidden" th:field="*{id}">
+                    <div class="col-md-6">
+                        <label class="form-label">Audit</label>
+                        <select class="form-select" name="auditId" th:classappend="${auditError} ? ' is-invalid' : ''">
+                            <option value="">Select an audit</option>
+                            <option th:each="audit : ${audits}" th:value="${audit.id}" th:text="${audit.site != null ? (audit.site.name + ' / #' + audit.id) : ('#' + audit.id)}" th:selected="${selectedAuditId != null and selectedAuditId == audit.id}"></option>
+                        </select>
+                        <div class="invalid-feedback d-block" th:if="${auditError}" th:text="${auditError}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">File Name</label>
+                        <input type="text" class="form-control" th:field="*{fileName}" th:classappend="${fileNameError} ? ' is-invalid' : ''" placeholder="audit-report-q1.pdf">
+                        <div class="invalid-feedback d-block" th:if="${fileNameError}" th:text="${fileNameError}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">File Path</label>
+                        <input type="text" class="form-control" th:field="*{filePath}" th:classappend="${filePathError} ? ' is-invalid' : ''" placeholder="reports/audit-report-q1.pdf">
+                        <div class="invalid-feedback d-block" th:if="${filePathError}" th:text="${filePathError}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Version</label>
+                        <input type="text" class="form-control" th:field="*{version}" placeholder="v1.0">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Upload Date</label>
+                        <input type="date" class="form-control" name="uploadDate" th:value="${report.uploadDate != null ? #temporals.format(report.uploadDate, 'yyyy-MM-dd') : ''}" th:classappend="${uploadDateError} ? ' is-invalid' : ''">
+                        <div class="invalid-feedback d-block" th:if="${uploadDateError}" th:text="${uploadDateError}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Uploaded By</label>
+                        <input type="text" class="form-control" th:field="*{uploadedBy}" th:classappend="${uploadedByError} ? ' is-invalid' : ''" placeholder="Security Team">
+                        <div class="invalid-feedback d-block" th:if="${uploadedByError}" th:text="${uploadedByError}"></div>
+                    </div>
+                    <div class="col-12 d-flex flex-wrap gap-2 pt-2">
+                        <button type="submit" class="btn btn-primary" th:text="${submitLabel}">Save Report</button>
+                        <a th:href="@{/reports}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>

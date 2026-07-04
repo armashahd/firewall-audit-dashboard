@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${finding.title}">Finding Details</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: layout('findings', ${finding.title}, 'Detailed risk record for the selected audit.', ~{::content})}">
+    <section th:fragment="content">
+        <div class="page-actions">
+            <div>
+                <h5 class="mb-1">Finding Details</h5>
+                <div class="lead">Status, severity, and remediation guidance.</div>
+            </div>
+            <div class="toolbar-group">
+                <a th:href="@{/findings}" class="btn btn-outline-secondary">Back</a>
+                <a th:href="@{/findings/edit/{id}(id=${finding.id})}" class="btn btn-outline-primary">Edit</a>
+                <form th:action="@{/findings/{id}/delete(id=${finding.id})}" method="post" onsubmit="return confirm('Delete this finding permanently?');">
+                    <button type="submit" class="btn btn-outline-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card dashboard-card">
+            <div class="card-body p-4 p-lg-5">
+                <div class="row g-4">
+                    <div class="col-md-6"><div class="stat-label">Audit</div><div class="fw-semibold fs-5" th:text="${finding.audit != null ? (finding.audit.site != null ? finding.audit.site.name + ' / #' + finding.audit.id : '#' + finding.audit.id) : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Title</div><div class="fw-semibold fs-5" th:text="${finding.title}"></div></div>
+                    <div class="col-12"><div class="stat-label">Description</div><div class="fw-semibold" style="white-space:pre-wrap;" th:text="${finding.description != null ? finding.description : '-'}"></div></div>
+                    <div class="col-md-6">
+                        <div class="stat-label">Severity</div>
+                        <div>
+                            <span th:switch="${finding.severity != null ? finding.severity.name() : ''}">
+                                <span th:case="'CRITICAL'" class="badge bg-danger">Critical</span>
+                                <span th:case="'HIGH'" class="badge bg-warning text-dark">High</span>
+                                <span th:case="'MEDIUM'" class="badge bg-info text-dark">Medium</span>
+                                <span th:case="'LOW'" class="badge bg-success">Low</span>
+                                <span th:case="*" class="badge bg-light text-dark border">N/A</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="stat-label">Status</div>
+                        <div>
+                            <span th:switch="${finding.status != null ? finding.status.name() : ''}">
+                                <span th:case="'OPEN'" class="badge bg-danger">Open</span>
+                                <span th:case="'IN_PROGRESS'" class="badge bg-warning text-dark">In Progress</span>
+                                <span th:case="'CLOSED'" class="badge bg-success">Closed</span>
+                                <span th:case="'ACCEPTED_RISK'" class="badge bg-secondary">Accepted Risk</span>
+                                <span th:case="*" class="badge bg-light text-dark border">N/A</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-6"><div class="stat-label">Category</div><div class="fw-semibold fs-5" th:text="${finding.category != null ? finding.category : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Assigned To</div><div class="fw-semibold fs-5" th:text="${finding.assignedTo != null ? finding.assignedTo : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Due Date</div><div class="fw-semibold fs-5" th:text="${finding.dueDate != null ? #temporals.format(finding.dueDate, 'yyyy-MM-dd') : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Closed Date</div><div class="fw-semibold fs-5" th:text="${finding.closedDate != null ? #temporals.format(finding.closedDate, 'yyyy-MM-dd') : '-'}"></div></div>
+                    <div class="col-12"><div class="stat-label">Recommendation</div><div class="fw-semibold" style="white-space:pre-wrap;" th:text="${finding.recommendation != null ? finding.recommendation : '-'}"></div></div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>

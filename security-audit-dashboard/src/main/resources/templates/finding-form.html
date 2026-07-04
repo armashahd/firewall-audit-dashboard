@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${formTitle}">Finding Form</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: layout('findings', ${formTitle}, 'Create or update a finding tied to an audit.', ~{::content})}">
+    <section th:fragment="content">
+        <div class="card dashboard-card">
+            <div class="card-body p-4 p-lg-5">
+                <div th:if="${errorMessage}" class="alert alert-danger" role="alert" th:text="${errorMessage}"></div>
+                <form th:action="@{/findings}" th:object="${finding}" method="post" class="row g-3">
+                    <input type="hidden" th:field="*{id}">
+                    <div class="col-md-6">
+                        <label class="form-label">Audit</label>
+                        <select class="form-select" name="auditId" th:classappend="${auditError} ? ' is-invalid' : ''">
+                            <option value="">Select an audit</option>
+                            <option th:each="audit : ${audits}" th:value="${audit.id}" th:text="${audit.site != null ? (audit.site.name + ' / #' + audit.id) : ('#' + audit.id)}" th:selected="${selectedAuditId != null and selectedAuditId == audit.id}"></option>
+                        </select>
+                        <div class="invalid-feedback d-block" th:if="${auditError}" th:text="${auditError}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Title</label>
+                        <input type="text" class="form-control" th:field="*{title}" th:classappend="${titleError} ? ' is-invalid' : ''" placeholder="Weak password policy">
+                        <div class="invalid-feedback d-block" th:if="${titleError}" th:text="${titleError}"></div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Description</label>
+                        <textarea rows="4" class="form-control" th:field="*{description}" th:classappend="${descriptionError} ? ' is-invalid' : ''"></textarea>
+                        <div class="invalid-feedback d-block" th:if="${descriptionError}" th:text="${descriptionError}"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Severity</label>
+                        <select class="form-select" th:field="*{severity}" th:classappend="${severityError} ? ' is-invalid' : ''">
+                            <option value="">Select severity</option>
+                            <option th:each="severity : ${T(com.ntg.securityaudit.enums.Severity).values()}" th:value="${severity}" th:text="${severity.name()}"></option>
+                        </select>
+                        <div class="invalid-feedback d-block" th:if="${severityError}" th:text="${severityError}"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" th:field="*{status}" th:classappend="${statusError} ? ' is-invalid' : ''">
+                            <option value="">Select status</option>
+                            <option th:each="status : ${T(com.ntg.securityaudit.enums.FindingStatus).values()}" th:value="${status}" th:text="${status.name()}"></option>
+                        </select>
+                        <div class="invalid-feedback d-block" th:if="${statusError}" th:text="${statusError}"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Category</label>
+                        <input type="text" class="form-control" th:field="*{category}" th:classappend="${categoryError} ? ' is-invalid' : ''" placeholder="Authentication">
+                        <div class="invalid-feedback d-block" th:if="${categoryError}" th:text="${categoryError}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Recommendation</label>
+                        <textarea rows="4" class="form-control" th:field="*{recommendation}" th:classappend="${recommendationError} ? ' is-invalid' : ''"></textarea>
+                        <div class="invalid-feedback d-block" th:if="${recommendationError}" th:text="${recommendationError}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Assigned To</label>
+                        <input type="text" class="form-control" th:field="*{assignedTo}" placeholder="Security Team">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Due Date</label>
+                        <input type="date" class="form-control" name="dueDate" th:value="${finding.dueDate != null ? #temporals.format(finding.dueDate, 'yyyy-MM-dd') : ''}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Closed Date</label>
+                        <input type="date" class="form-control" name="closedDate" th:value="${finding.closedDate != null ? #temporals.format(finding.closedDate, 'yyyy-MM-dd') : ''}">
+                    </div>
+                    <div class="col-12 d-flex flex-wrap gap-2 pt-2">
+                        <button type="submit" class="btn btn-primary" th:text="${submitLabel}">Save Finding</button>
+                        <a th:href="@{/findings}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>

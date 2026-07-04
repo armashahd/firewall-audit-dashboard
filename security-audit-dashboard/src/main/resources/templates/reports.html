@@ -1,105 +1,66 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <title>Firewall Security Audit Dashboard</title>
-
+    <title>Reports</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
 </head>
-
 <body>
 
-<div class="container-fluid">
-
-    <div class="row">
-
-        <!-- Sidebar -->
-        <div class="col-md-2 bg-dark text-white vh-100 p-3">
-
-            <h4 class="mb-4">Audit Dashboard</h4>
-
-            <div class="list-group">
-
-                <a th:href="@{/}" class="list-group-item list-group-item-action active">
-                    Dashboard
-                </a>
-
-                <a th:href="@{/sites}" class="list-group-item list-group-item-action">
-                    Sites
-                </a>
-
-                <a th:href="@{/findings}" class="list-group-item list-group-item-action">
-                    Findings
-                </a>
-
-                <a th:href="@{/reports}" class="list-group-item list-group-item-action">
-                    Reports
-                </a>
-
-                <a th:href="@{/settings}" class="list-group-item list-group-item-action">
-                    Settings
-                </a>
-
+<div th:replace="~{fragments/layout :: layout('reports', 'Reports', 'Document and metadata records for completed audits.', ~{::content})}">
+    <section th:fragment="content" class="content-grid">
+        <div class="page-actions">
+            <div>
+                <h5 class="mb-1">Report Library</h5>
+                <div class="lead">Metadata records only, no file upload required.</div>
             </div>
-
+            <div class="toolbar-group">
+                <a th:href="@{/reports/new}" class="btn btn-primary">Add Report</a>
+            </div>
         </div>
 
-        <!-- Main Content -->
-        <div class="col-md-10 p-4 bg-light">
-
-            <h2 class="mb-4">Firewall Security Audit Dashboard</h2>
-
-            <div class="row g-4">
-
-                <div class="col-md-3">
-                    <div class="card text-center shadow-sm">
-                        <div class="card-body">
-                            <h6>Overall Score</h6>
-                            <h2>92%</h2>
-                        </div>
-                    </div>
+        <div class="card dashboard-card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle">
+                        <thead>
+                        <tr>
+                            <th>File Name</th>
+                            <th>File Path</th>
+                            <th>Version</th>
+                            <th>Upload Date</th>
+                            <th>Uploaded By</th>
+                            <th class="text-nowrap">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(reports)}">
+                            <td colspan="6" class="text-center py-5 text-muted">No reports found.</td>
+                        </tr>
+                        <tr th:each="report : ${reports}">
+                            <td><a th:href="@{/reports/details/{id}(id=${report.id})}" class="fw-semibold text-decoration-none" th:text="${report.fileName}"></a></td>
+                            <td th:text="${report.filePath != null ? report.filePath : '-'}"></td>
+                            <td th:text="${report.version != null ? report.version : '-'}"></td>
+                            <td th:text="${report.uploadDate != null ? #temporals.format(report.uploadDate, 'yyyy-MM-dd') : '-'}"></td>
+                            <td th:text="${report.uploadedBy != null ? report.uploadedBy : '-'}"></td>
+                            <td class="text-nowrap">
+                                <div class="btn-group btn-group-sm">
+                                    <a th:href="@{/reports/details/{id}(id=${report.id})}" class="btn btn-outline-secondary">View</a>
+                                    <a th:href="@{/reports/edit/{id}(id=${report.id})}" class="btn btn-outline-primary">Edit</a>
+                                    <form th:action="@{/reports/{id}/delete(id=${report.id})}" method="post" class="d-inline" onsubmit="return confirm('Delete this report permanently?');">
+                                        <button type="submit" class="btn btn-outline-danger">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
-
-                <div class="col-md-3">
-                    <div class="card text-center shadow-sm">
-                        <div class="card-body">
-                            <h6>Open Findings</h6>
-                            <h2>15</h2>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="card text-center shadow-sm">
-                        <div class="card-body">
-                            <h6>Closed Findings</h6>
-                            <h2>48</h2>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="card text-center shadow-sm">
-                        <div class="card-body">
-                            <h6>Completion</h6>
-                            <h2>76%</h2>
-                        </div>
-                    </div>
-                </div>
-
             </div>
-
         </div>
-
-    </div>
-
+    </section>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
-
 </body>
-
 </html>

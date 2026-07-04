@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${'Audit #' + audit.id}">Audit Details</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: layout('audits', ${'Audit #' + audit.id}, 'Full audit record and performance snapshot.', ~{::content})}">
+    <section th:fragment="content">
+        <div class="page-actions">
+            <div>
+                <h5 class="mb-1">Audit Information</h5>
+                <div class="lead">Review site, score, and audit notes.</div>
+            </div>
+            <div class="toolbar-group">
+                <a th:href="@{/audits}" class="btn btn-outline-secondary">Back</a>
+                <a th:href="@{/audits/edit/{id}(id=${audit.id})}" class="btn btn-outline-primary">Edit</a>
+                <form th:action="@{/audits/{id}/delete(id=${audit.id})}" method="post" onsubmit="return confirm('Delete this audit permanently?');">
+                    <button type="submit" class="btn btn-outline-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card dashboard-card">
+            <div class="card-body p-4 p-lg-5">
+                <div class="row g-4">
+                    <div class="col-md-6"><div class="stat-label">Site</div><div class="fw-semibold fs-5" th:text="${audit.site != null ? audit.site.name : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Round</div><div class="fw-semibold fs-5" th:text="${audit.auditRound != null ? audit.auditRound : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Date</div><div class="fw-semibold fs-5" th:text="${audit.auditDate != null ? #temporals.format(audit.auditDate, 'yyyy-MM-dd') : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Auditor</div><div class="fw-semibold fs-5" th:text="${audit.auditor != null ? audit.auditor : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Overall Score</div><div><span class="badge bg-primary" th:text="${audit.overallScore != null ? audit.overallScore + '%' : 'N/A'}"></span></div></div>
+                    <div class="col-md-6"><div class="stat-label">Completion %</div><div><span class="badge bg-info text-dark" th:text="${audit.completionPercentage != null ? audit.completionPercentage + '%' : 'N/A'}"></span></div></div>
+                    <div class="col-12"><div class="stat-label">Remarks</div><div class="fw-semibold" style="white-space:pre-wrap;" th:text="${audit.remarks != null ? audit.remarks : '-'}"></div></div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>
