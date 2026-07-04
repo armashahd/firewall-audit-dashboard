@@ -16,7 +16,7 @@
 
         <h2>Sites</h2>
 
-        <a href="#" class="btn btn-primary">
+        <a th:href="@{/sites/new}" class="btn btn-primary">
             + Add Site
         </a>
 
@@ -35,6 +35,7 @@
             <th>Firmware</th>
             <th>Score</th>
             <th>Status</th>
+            <th>Actions</th>
         </tr>
 
         </thead>
@@ -58,6 +59,12 @@
             <td th:text="${site.securityScore}"></td>
 
             <td th:text="${site.status}"></td>
+
+            <td>
+                <a th:href="@{/sites/edit/{id}(id=${site.id})}" class="btn btn-sm btn-outline-primary">
+                    Edit
+                </a>
+            </td>
 
         </tr>
 
