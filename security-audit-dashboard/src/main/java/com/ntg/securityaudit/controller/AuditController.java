@@ -13,6 +13,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.time.LocalDate;
+import java.util.Comparator;
+import java.util.List;
+
 @Controller
 public class AuditController {
 
@@ -25,8 +29,37 @@ public class AuditController {
     }
 
     @GetMapping("/audits")
-    public String listAudits(Model model) {
-        model.addAttribute("audits", auditService.getAllAudits());
+    public String listAudits(@RequestParam(required = false) Long siteId,
+                             @RequestParam(required = false) Integer auditRound,
+                             @RequestParam(required = false) Integer year,
+                             Model model) {
+        List<Audit> allAudits = auditService.getAllAudits();
+        List<Audit> audits = allAudits.stream()
+                .filter(audit -> siteId == null || audit.getSite() != null && siteId.equals(audit.getSite().getId()))
+                .filter(audit -> auditRound == null || auditRound.equals(audit.getAuditRound()))
+                .filter(audit -> year == null || audit.getAuditDate() != null && year.equals(audit.getAuditDate().getYear()))
+                .toList();
+        List<Integer> auditRounds = allAudits.stream()
+                .map(Audit::getAuditRound)
+                .filter(round -> round != null && round > 0)
+                .distinct()
+                .sorted()
+                .toList();
+        List<Integer> years = allAudits.stream()
+                .map(Audit::getAuditDate)
+                .filter(date -> date != null)
+                .map(LocalDate::getYear)
+                .distinct()
+                .sorted(Comparator.reverseOrder())
+                .toList();
+
+        model.addAttribute("audits", audits);
+        model.addAttribute("sites", siteService.getAllSites());
+        model.addAttribute("auditRounds", auditRounds);
+        model.addAttribute("years", years);
+        model.addAttribute("selectedSiteId", siteId);
+        model.addAttribute("selectedAuditRound", auditRound);
+        model.addAttribute("selectedYear", year);
         return "audits";
     }
 

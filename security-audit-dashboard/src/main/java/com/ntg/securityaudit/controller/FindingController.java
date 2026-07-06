@@ -6,6 +6,7 @@ import com.ntg.securityaudit.enums.FindingStatus;
 import com.ntg.securityaudit.enums.Severity;
 import com.ntg.securityaudit.service.AuditService;
 import com.ntg.securityaudit.service.FindingService;
+import com.ntg.securityaudit.service.SiteService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
@@ -17,32 +18,58 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 
 @Controller
 public class FindingController {
 
     private final FindingService findingService;
     private final AuditService auditService;
+    private final SiteService siteService;
 
-    public FindingController(FindingService findingService, AuditService auditService) {
+    public FindingController(FindingService findingService, AuditService auditService, SiteService siteService) {
         this.findingService = findingService;
         this.auditService = auditService;
+        this.siteService = siteService;
     }
 
     @GetMapping("/findings")
-    public String listFindings(@RequestParam(required = false) FindingStatus status,
+    public String listFindings(@RequestParam(required = false) Long siteId,
+                               @RequestParam(required = false) FindingStatus status,
                                @RequestParam(required = false) Severity severity,
+                               @RequestParam(required = false) String category,
                                @RequestParam(required = false) Boolean overdue,
                                Model model) {
-        List<Finding> findings = findingService.getAllFindings().stream()
+        List<Finding> allFindings = findingService.getAllFindings();
+        List<Finding> findings = allFindings.stream()
+                .filter(finding -> siteId == null || finding.getAudit() != null
+                        && finding.getAudit().getSite() != null
+                        && siteId.equals(finding.getAudit().getSite().getId()))
                 .filter(finding -> status == null || finding.getStatus() == status)
                 .filter(finding -> severity == null || finding.getSeverity() == severity)
+                .filter(finding -> !StringUtils.hasText(category) || category.equalsIgnoreCase(finding.getCategory()))
                 .filter(finding -> overdue == null || !overdue || finding.getStatus() != null
                         && finding.getStatus().isOpenOrInProgress()
                         && finding.getDueDate() != null
                         && finding.getDueDate().isBefore(LocalDate.now()))
                 .toList();
+        List<String> categories = allFindings.stream()
+                .map(Finding::getCategory)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList();
+
         model.addAttribute("findings", findings);
+        model.addAttribute("sites", siteService.getAllSites());
+        model.addAttribute("severities", Severity.values());
+        model.addAttribute("statuses", FindingStatus.values());
+        model.addAttribute("categories", categories);
+        model.addAttribute("selectedSiteId", siteId);
+        model.addAttribute("selectedStatus", status);
+        model.addAttribute("selectedSeverity", severity);
+        model.addAttribute("selectedCategory", category);
+        model.addAttribute("selectedOverdue", Objects.equals(overdue, Boolean.TRUE));
         return "findings";
     }
 

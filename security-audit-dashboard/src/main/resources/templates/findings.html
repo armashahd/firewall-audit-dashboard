@@ -22,6 +22,69 @@
         </div>
 
         <div class="card dashboard-card">
+            <div class="card-body">
+                <form th:action="@{/findings}" method="get" class="row g-3 align-items-end">
+                    <div class="col-md-3 col-lg-2">
+                        <label for="siteId" class="form-label small text-muted">Site</label>
+                        <select id="siteId" name="siteId" class="form-select">
+                            <option value="">All Sites</option>
+                            <option th:each="site : ${sites}"
+                                    th:value="${site.id}"
+                                    th:selected="${selectedSiteId != null and selectedSiteId == site.id}"
+                                    th:text="${site.name}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-lg-2">
+                        <label for="severity" class="form-label small text-muted">Severity</label>
+                        <select id="severity" name="severity" class="form-select">
+                            <option value="">All Severities</option>
+                            <option th:each="severityOption : ${severities}"
+                                    th:value="${severityOption.name()}"
+                                    th:selected="${selectedSeverity != null and selectedSeverity == severityOption}"
+                                    th:text="${severityOption.name()}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-lg-2">
+                        <label for="status" class="form-label small text-muted">Status</label>
+                        <select id="status" name="status" class="form-select">
+                            <option value="">All Statuses</option>
+                            <option th:each="statusOption : ${statuses}"
+                                    th:value="${statusOption.name()}"
+                                    th:selected="${selectedStatus != null and selectedStatus == statusOption}"
+                                    th:text="${statusOption.displayName}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-lg-2">
+                        <label for="category" class="form-label small text-muted">Category</label>
+                        <select id="category" name="category" class="form-select">
+                            <option value="">All Categories</option>
+                            <option th:each="categoryOption : ${categories}"
+                                    th:value="${categoryOption}"
+                                    th:selected="${selectedCategory != null and selectedCategory == categoryOption}"
+                                    th:text="${categoryOption}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-lg-2">
+                        <label for="overdue" class="form-label small text-muted">Due Status</label>
+                        <select id="overdue" name="overdue" class="form-select">
+                            <option value="">All Findings</option>
+                            <option value="true" th:selected="${selectedOverdue}">Overdue Only</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-lg-2">
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-fill">Filter</button>
+                            <a th:href="@{/findings}" class="btn btn-outline-secondary">Reset</a>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <span class="text-muted small" th:text="${#lists.size(findings)} + ' finding(s) shown'"></span>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card dashboard-card">
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-striped table-hover align-middle">

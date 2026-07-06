@@ -21,6 +21,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -62,7 +63,7 @@ public class ReportUploadService {
             ReportUploadResult result = new ReportUploadResult();
             result.setDuplicate(true);
             result.setSiteName(parsedReport.getSiteName());
-            result.setMessage("Duplicate import skipped. A report already exists for the same site, audit date, and report version.");
+            result.setMessage("This report appears to be already imported.");
             return result;
         }
 
@@ -110,12 +111,27 @@ public class ReportUploadService {
 
     private boolean isDuplicate(ParsedAuditReport parsedReport) {
         return reportRepository.findAll().stream()
-                .anyMatch(report -> report.getAudit() != null
-                        && report.getAudit().getSite() != null
-                        && report.getAudit().getAuditDate() != null
-                        && parsedReport.getSiteName().equalsIgnoreCase(report.getAudit().getSite().getName())
-                        && parsedReport.getAuditDate().equals(report.getAudit().getAuditDate())
-                        && parsedReport.getReportVersion().equalsIgnoreCase(report.getVersion() != null ? report.getVersion() : ""));
+                .anyMatch(report -> sameReportIdentity(report, parsedReport));
+    }
+
+    private boolean sameReportIdentity(Report report, ParsedAuditReport parsedReport) {
+        LocalDate existingAuditDate = report.getAuditDate() != null
+                ? report.getAuditDate()
+                : report.getAudit() != null ? report.getAudit().getAuditDate() : null;
+        String existingSiteName = firstNonBlank(report.getSiteName(),
+                report.getAudit() != null && report.getAudit().getSite() != null ? report.getAudit().getSite().getName() : null);
+
+        boolean dateMatches = Objects.equals(existingAuditDate, parsedReport.getAuditDate());
+        boolean versionMatches = normalizeText(report.getVersion()).equals(normalizeText(parsedReport.getReportVersion()));
+        boolean siteMatches = normalizeText(existingSiteName).equals(normalizeText(parsedReport.getSiteName()));
+        boolean hostnameMatches = hasBoth(report.getHostname(), parsedReport.getHostname())
+                && normalizeText(report.getHostname()).equals(normalizeText(parsedReport.getHostname()));
+        boolean ipMatches = hasBoth(report.getIpAddress(), parsedReport.getIpAddress())
+                && normalizeText(report.getIpAddress()).equals(normalizeText(parsedReport.getIpAddress()));
+
+        return dateMatches && versionMatches && siteMatches
+                && (!StringUtils.hasText(parsedReport.getHostname()) || hostnameMatches)
+                && (!StringUtils.hasText(parsedReport.getIpAddress()) || ipMatches);
     }
 
     private Site createOrUpdateSite(ParsedAuditReport parsedReport) {
@@ -125,7 +141,10 @@ public class ReportUploadService {
         site.setFirewallVendor(firstNonBlank(parsedReport.getVendor(), site.getFirewallVendor()));
         site.setFirewallModel(firstNonBlank(parsedReport.getDeviceModel(), site.getFirewallModel()));
         site.setLastAuditDate(parsedReport.getAuditDate());
-        site.setSecurityScore(scoreOrDefault(parsedReport.getRiskScore(), site.getSecurityScore()));
+        Integer securityScore = calculateImportedSecurityScore(parsedReport);
+        if (securityScore != null) {
+            site.setSecurityScore(securityScore);
+        }
         if (site.getStatus() == null) {
             site.setStatus(SiteStatus.ACTIVE);
         }
@@ -138,7 +157,7 @@ public class ReportUploadService {
         audit.setAuditRound(nextAuditRound(site));
         audit.setAuditDate(parsedReport.getAuditDate());
         audit.setAuditor(parsedReport.getAuditor());
-        audit.setOverallScore(scoreOrDefault(parsedReport.getRiskScore(), 0));
+        audit.setOverallScore(calculateImportedSecurityScore(parsedReport));
         audit.setCompletionPercentage(complianceCompletion(parsedReport));
         audit.setRemarks("Imported from uploaded firewall audit report " + parsedReport.getReportVersion());
         return auditRepository.save(audit);
@@ -195,6 +214,20 @@ public class ReportUploadService {
         return Math.max(0, Math.min(100, score));
     }
 
+    private Integer calculateImportedSecurityScore(ParsedAuditReport parsedReport) {
+        Double riskScore = parsedReport.getRiskScoreValue() != null
+                ? parsedReport.getRiskScoreValue()
+                : parsedReport.getRiskScore() != null ? parsedReport.getRiskScore().doubleValue() : null;
+        if (riskScore != null) {
+            return scoreOrDefault((int) Math.round(100 - riskScore), null);
+        }
+
+        int passed = parsedReport.getPassedComplianceCount() != null ? parsedReport.getPassedComplianceCount() : 0;
+        int failed = parsedReport.getFailedComplianceCount() != null ? parsedReport.getFailedComplianceCount() : 0;
+        int total = passed + failed;
+        return total > 0 ? scoreOrDefault((int) Math.round((passed * 100.0) / total), null) : null;
+    }
+
     private String uniqueFileName(String originalFileName) {
         return UUID.randomUUID() + "-" + sanitizeFileName(originalFileName);
     }
@@ -212,5 +245,16 @@ public class ReportUploadService {
 
     private String firstNonBlank(String first, String second) {
         return StringUtils.hasText(first) ? first : second;
+    }
+
+    private boolean hasBoth(String first, String second) {
+        return StringUtils.hasText(first) && StringUtils.hasText(second);
+    }
+
+    private String normalizeText(String value) {
+        if (!StringUtils.hasText(value)) {
+            return "";
+        }
+        return value.toLowerCase(Locale.ENGLISH).replaceAll("[^a-z0-9.]+", "");
     }
 }

@@ -461,12 +461,22 @@ public class DashboardDTO {
     }
 
     public static class RiskItem {
+        private Long findingId;
         private String title;
         private String category;
+        private String siteName;
         private String severity;
         private Long count;
 
         public RiskItem() {
+        }
+
+        public Long getFindingId() {
+            return findingId;
+        }
+
+        public void setFindingId(Long findingId) {
+            this.findingId = findingId;
         }
 
         public String getTitle() {
@@ -483,6 +493,14 @@ public class DashboardDTO {
 
         public void setCategory(String category) {
             this.category = category;
+        }
+
+        public String getSiteName() {
+            return siteName;
+        }
+
+        public void setSiteName(String siteName) {
+            this.siteName = siteName;
         }
 
         public String getSeverity() {
@@ -771,6 +789,7 @@ public class DashboardDTO {
         private String type;
         private String message;
         private String badgeClass;
+        private String targetUrl;
 
         public LocalDate getActivityDate() {
             return activityDate;
@@ -802,6 +821,14 @@ public class DashboardDTO {
 
         public void setBadgeClass(String badgeClass) {
             this.badgeClass = badgeClass;
+        }
+
+        public String getTargetUrl() {
+            return targetUrl;
+        }
+
+        public void setTargetUrl(String targetUrl) {
+            this.targetUrl = targetUrl;
         }
     }
 }

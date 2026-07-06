@@ -22,6 +22,52 @@
         </div>
 
         <div class="card dashboard-card">
+            <div class="card-body">
+                <form th:action="@{/audits}" method="get" class="row g-3 align-items-end">
+                    <div class="col-md-4 col-lg-3">
+                        <label for="siteId" class="form-label small text-muted">Site Name</label>
+                        <select id="siteId" name="siteId" class="form-select">
+                            <option value="">All Sites</option>
+                            <option th:each="site : ${sites}"
+                                    th:value="${site.id}"
+                                    th:selected="${selectedSiteId != null and selectedSiteId == site.id}"
+                                    th:text="${site.name}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 col-lg-2">
+                        <label for="auditRound" class="form-label small text-muted">Audit Round</label>
+                        <select id="auditRound" name="auditRound" class="form-select">
+                            <option value="">All Rounds</option>
+                            <option th:each="round : ${auditRounds}"
+                                    th:value="${round}"
+                                    th:selected="${selectedAuditRound != null and selectedAuditRound == round}"
+                                    th:text="${'Round ' + round}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 col-lg-2">
+                        <label for="year" class="form-label small text-muted">Year</label>
+                        <select id="year" name="year" class="form-select">
+                            <option value="">All Years</option>
+                            <option th:each="yearOption : ${years}"
+                                    th:value="${yearOption}"
+                                    th:selected="${selectedYear != null and selectedYear == yearOption}"
+                                    th:text="${yearOption}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 col-lg-2">
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-fill">Filter</button>
+                            <a th:href="@{/audits}" class="btn btn-outline-secondary">Reset</a>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <span class="text-muted small" th:text="${#lists.size(audits)} + ' audit(s) shown'"></span>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card dashboard-card">
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-striped table-hover align-middle">

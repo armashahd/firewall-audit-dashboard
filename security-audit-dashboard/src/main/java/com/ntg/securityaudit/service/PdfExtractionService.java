@@ -140,6 +140,7 @@ public class PdfExtractionService {
         report.setFailedComplianceCount(firstNonNull(parseInteger(firstMatch(text, "(?is)Failed\\s*(\\d+)")), parseInteger(firstValue(text, "Failed Compliance Count", "Failed Compliance"))));
         Double riskScore = parseDecimal(firstMatch(text, "(?is)Risk Score for the Assets:.*?(\\d+(?:\\.\\d+)?)\\s*%"));
         if (riskScore != null) {
+            report.setRiskScoreValue(riskScore);
             report.setRiskScore((int) Math.round(riskScore));
         }
     }

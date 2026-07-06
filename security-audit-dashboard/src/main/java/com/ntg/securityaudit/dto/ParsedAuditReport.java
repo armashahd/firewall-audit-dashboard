@@ -18,6 +18,7 @@ public class ParsedAuditReport {
     private String auditor;
     private LocalDate assessmentDate;
     private Integer riskScore;
+    private Double riskScoreValue;
     private Integer passedComplianceCount;
     private Integer failedComplianceCount;
     private Integer criticalCount;
@@ -121,6 +122,14 @@ public class ParsedAuditReport {
 
     public void setRiskScore(Integer riskScore) {
         this.riskScore = riskScore;
+    }
+
+    public Double getRiskScoreValue() {
+        return riskScoreValue;
+    }
+
+    public void setRiskScoreValue(Double riskScoreValue) {
+        this.riskScoreValue = riskScoreValue;
     }
 
     public Integer getPassedComplianceCount() {

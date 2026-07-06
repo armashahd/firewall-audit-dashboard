@@ -237,8 +237,9 @@
                             <div th:each="risk : ${dashboard.topRisks}" class="list-group-item px-0 py-3">
                                 <div class="d-flex justify-content-between align-items-start gap-3">
                                     <div class="min-w-0">
-                                        <div class="fw-semibold text-truncate" th:text="${risk.title}">Risk title</div>
-                                        <div class="text-muted small text-truncate" th:text="${risk.category != null ? risk.category : '-'}">Category</div>
+                                        <a th:if="${risk.findingId != null}" th:href="@{/findings/details/{id}(id=${risk.findingId})}" class="fw-semibold text-truncate d-block text-decoration-none" th:text="${risk.title}">Risk title</a>
+                                        <div th:unless="${risk.findingId != null}" class="fw-semibold text-truncate" th:text="${risk.title}">Risk title</div>
+                                        <div class="text-muted small text-truncate" th:text="${(risk.category != null ? risk.category : '-') + ' / ' + (risk.siteName != null ? risk.siteName : '-')}">Category / Site</div>
                                     </div>
                                     <div class="text-end">
                                         <span class="badge bg-light text-dark border" th:text="${risk.count}">0</span>
@@ -462,7 +463,8 @@
                                 <div class="d-flex justify-content-between align-items-start gap-3">
                                     <div>
                                         <span class="badge" th:classappend="${activity.badgeClass}" th:text="${activity.type}">Type</span>
-                                        <div class="fw-semibold mt-2" th:text="${activity.message}">Activity message</div>
+                                        <a th:if="${activity.targetUrl != null}" th:href="@{${activity.targetUrl}}" class="fw-semibold mt-2 d-block text-decoration-none" th:text="${activity.message}">Activity message</a>
+                                        <div th:unless="${activity.targetUrl != null}" class="fw-semibold mt-2" th:text="${activity.message}">Activity message</div>
                                     </div>
                                     <div class="text-muted small text-nowrap" th:text="${activity.activityDate != null ? #temporals.format(activity.activityDate, 'dd MMM yyyy') : '-'}">-</div>
                                 </div>
@@ -499,7 +501,8 @@
                         </tr>
                         <tr th:each="action : ${dashboard.upcomingActionPlans}">
                             <td>
-                                <div class="fw-semibold" th:text="${action.action}">Action</div>
+                                <a th:if="${action.findingId != null}" th:href="@{/findings/details/{id}(id=${action.findingId})}" class="fw-semibold d-block text-decoration-none" th:text="${action.action}">Action</a>
+                                <div th:unless="${action.findingId != null}" class="fw-semibold" th:text="${action.action}">Action</div>
                                 <div class="text-muted small text-truncate" th:text="${action.description != null ? action.description : '-'}">Description</div>
                             </td>
                             <td th:text="${action.owner != null ? action.owner : '-'}"></td>

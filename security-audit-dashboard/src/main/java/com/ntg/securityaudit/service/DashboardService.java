@@ -121,13 +121,13 @@ public class DashboardService {
 
         double averageSiteScore = sites.stream()
                 .map(Site::getSecurityScore)
-                .filter(Objects::nonNull)
+                .filter(this::isUsableScore)
                 .mapToInt(Integer::intValue)
                 .average()
                 .orElse(0);
         double averageAuditScore = audits.stream()
                 .map(Audit::getOverallScore)
-                .filter(Objects::nonNull)
+                .filter(this::isUsableScore)
                 .mapToInt(Integer::intValue)
                 .average()
                 .orElse(0);
@@ -282,15 +282,11 @@ public class DashboardService {
         int currentCompletion = current.getCompletionPercentage() == null ? 0 : current.getCompletionPercentage();
         int previousCompletion = previous.getCompletionPercentage() == null ? 0 : previous.getCompletionPercentage();
 
-        setTrend(dto::setScoreTrendLabel, dto::setScoreTrendClass, currentScore - previousScore, true, "% since previous audit");
-        setTrend(dto::setOpenFindingsTrendLabel, dto::setOpenFindingsTrendClass,
-                (int) (currentFindings.stream().filter(this::isOpenOrInProgress).count() - previousFindings.stream().filter(this::isOpenOrInProgress).count()),
-                false, " since previous audit");
-        setTrend(dto::setClosedFindingsTrendLabel, dto::setClosedFindingsTrendClass,
-                (int) (currentFindings.stream().filter(finding -> finding.getStatus() != null && finding.getStatus().isClosed()).count()
-                        - previousFindings.stream().filter(finding -> finding.getStatus() != null && finding.getStatus().isClosed()).count()),
-                true, " since previous audit");
-        setTrend(dto::setCompletionTrendLabel, dto::setCompletionTrendClass, currentCompletion - previousCompletion, true, "% since previous audit");
+        setDirectionalTrend(dto::setScoreTrendLabel, dto::setScoreTrendClass, currentScore - previousScore, "% since previous audit");
+        setOpenFindingsTrend(dto, (int) (currentFindings.stream().filter(this::isOpenOrInProgress).count() - previousFindings.stream().filter(this::isOpenOrInProgress).count()));
+        setClosedFindingsTrend(dto, (int) (currentFindings.stream().filter(finding -> finding.getStatus() != null && finding.getStatus().isClosed()).count()
+                - previousFindings.stream().filter(finding -> finding.getStatus() != null && finding.getStatus().isClosed()).count()));
+        setDirectionalTrend(dto::setCompletionTrendLabel, dto::setCompletionTrendClass, currentCompletion - previousCompletion, "% since previous audit");
     }
 
     private void setFlatTrends(DashboardDTO dto) {
@@ -304,19 +300,37 @@ public class DashboardService {
         dto.setCompletionTrendClass("text-muted");
     }
 
-    private void setTrend(java.util.function.Consumer<String> labelSetter,
-                          java.util.function.Consumer<String> classSetter,
-                          int delta,
-                          boolean higherIsBetter,
-                          String suffix) {
+    private void setDirectionalTrend(java.util.function.Consumer<String> labelSetter,
+                                     java.util.function.Consumer<String> classSetter,
+                                     int delta,
+                                     String suffix) {
         if (delta == 0) {
             labelSetter.accept("no change");
             classSetter.accept("text-muted");
             return;
         }
-        boolean improved = higherIsBetter ? delta > 0 : delta < 0;
-        labelSetter.accept((improved ? "up " : "down ") + (delta > 0 ? "+" : "") + delta + suffix);
-        classSetter.accept(improved ? "text-success" : "text-danger");
+        labelSetter.accept((delta > 0 ? "up " : "down ") + Math.abs(delta) + suffix);
+        classSetter.accept(delta > 0 ? "text-success" : "text-danger");
+    }
+
+    private void setOpenFindingsTrend(DashboardDTO dto, int delta) {
+        if (delta == 0) {
+            dto.setOpenFindingsTrendLabel("no change");
+            dto.setOpenFindingsTrendClass("text-muted");
+            return;
+        }
+        dto.setOpenFindingsTrendLabel((delta > 0 ? "worsened +" : "improved ") + delta + " since previous audit");
+        dto.setOpenFindingsTrendClass(delta > 0 ? "text-danger" : "text-success");
+    }
+
+    private void setClosedFindingsTrend(DashboardDTO dto, int delta) {
+        if (delta == 0) {
+            dto.setClosedFindingsTrendLabel("no change");
+            dto.setClosedFindingsTrendClass("text-muted");
+            return;
+        }
+        dto.setClosedFindingsTrendLabel((delta > 0 ? "improved +" : "worsened ") + delta + " since previous audit");
+        dto.setClosedFindingsTrendClass(delta > 0 ? "text-success" : "text-danger");
     }
 
     private List<Finding> findingsForAudit(List<Finding> findings, Audit audit) {
@@ -361,21 +375,23 @@ public class DashboardService {
         List<DashboardDTO.ActivityFeedItem> items = new ArrayList<>();
         audits.forEach(audit -> items.add(activity(audit.getAuditDate(), "Audit", "Audit completed for "
                 + (audit.getSite() != null ? audit.getSite().getName() : "site")
-                + (audit.getAuditRound() != null ? " round " + audit.getAuditRound() : ""), "bg-primary")));
+                + (audit.getAuditRound() != null ? " round " + audit.getAuditRound() : ""), "bg-primary",
+                audit.getId() != null ? "/audits/details/" + audit.getId() : null)));
         findings.forEach(finding -> {
             if (finding.getStatus() == FindingStatus.CLOSED) {
-                items.add(activity(finding.getClosedDate(), "Finding", "Finding closed: " + finding.getTitle(), "bg-success"));
+                items.add(activity(finding.getClosedDate(), "Finding", "Finding closed: " + finding.getTitle(), "bg-success", findingUrl(finding)));
             } else if (finding.getStatus() == FindingStatus.ACCEPTED_RISK) {
-                items.add(activity(finding.getDueDate(), "Finding", "Finding accepted as risk: " + finding.getTitle(), "bg-secondary"));
+                items.add(activity(finding.getDueDate(), "Finding", "Finding accepted as risk: " + finding.getTitle(), "bg-secondary", findingUrl(finding)));
             } else {
-                items.add(activity(finding.getDueDate(), "Finding", "Finding created/open: " + finding.getTitle(), "bg-danger"));
+                items.add(activity(finding.getDueDate(), "Finding", "Finding created/open: " + finding.getTitle(), "bg-danger", findingUrl(finding)));
             }
         });
         exceptions.forEach(exception -> items.add(activity(exception.getExpiryDate(), "Exception",
                 effectiveExceptionStatus(exception) == AuditExceptionStatus.EXPIRED
                         ? "Exception expired: " + exception.getExceptionName()
                         : "Exception active: " + exception.getExceptionName(),
-                effectiveExceptionStatus(exception) == AuditExceptionStatus.EXPIRED ? "bg-warning text-dark" : "bg-success")));
+                effectiveExceptionStatus(exception) == AuditExceptionStatus.EXPIRED ? "bg-warning text-dark" : "bg-success",
+                exception.getId() != null ? "/audit-exceptions/details/" + exception.getId() : null)));
 
         return items.stream()
                 .sorted(Comparator.comparing(DashboardDTO.ActivityFeedItem::getActivityDate, Comparator.nullsLast(Comparator.naturalOrder())).reversed())
@@ -383,13 +399,18 @@ public class DashboardService {
                 .toList();
     }
 
-    private DashboardDTO.ActivityFeedItem activity(LocalDate date, String type, String message, String badgeClass) {
+    private DashboardDTO.ActivityFeedItem activity(LocalDate date, String type, String message, String badgeClass, String targetUrl) {
         DashboardDTO.ActivityFeedItem item = new DashboardDTO.ActivityFeedItem();
         item.setActivityDate(date);
         item.setType(type);
         item.setMessage(message);
         item.setBadgeClass(badgeClass);
+        item.setTargetUrl(targetUrl);
         return item;
+    }
+
+    private String findingUrl(Finding finding) {
+        return finding.getId() != null ? "/findings/details/" + finding.getId() : null;
     }
 
     private long countExceptionsByStatus(List<AuditException> exceptions, AuditExceptionStatus status) {
@@ -437,6 +458,10 @@ public class DashboardService {
                 .orElse(0);
     }
 
+    private boolean isUsableScore(Integer score) {
+        return score != null && score > 0;
+    }
+
     private String formatAuditLabel(Audit audit) {
         String siteName = audit.getSite() != null && audit.getSite().getName() != null ? audit.getSite().getName() : "Audit";
         String roundLabel = audit.getAuditRound() != null ? " R" + audit.getAuditRound() : "";
@@ -466,10 +491,20 @@ public class DashboardService {
 
         return groupedFindings.entrySet().stream()
                 .map(entry -> {
+                    Finding representativeFinding = entry.getValue().stream()
+                            .max(Comparator.comparingInt((Finding finding) -> severityRank(finding.getSeverity()))
+                                    .thenComparing(finding -> finding.getId() != null ? finding.getId() : 0L))
+                            .orElse(null);
                     DashboardDTO.RiskItem item = new DashboardDTO.RiskItem();
+                    item.setFindingId(representativeFinding != null ? representativeFinding.getId() : null);
                     item.setTitle(entry.getKey());
                     item.setCount((long) entry.getValue().size());
                     item.setCategory(entry.getValue().stream().map(this::normalizeCategory).findFirst().orElse("Uncategorised"));
+                    item.setSiteName(representativeFinding != null
+                            && representativeFinding.getAudit() != null
+                            && representativeFinding.getAudit().getSite() != null
+                            ? representativeFinding.getAudit().getSite().getName()
+                            : "-");
                     item.setSeverity(entry.getValue().stream()
                             .map(Finding::getSeverity)
                             .filter(Objects::nonNull)
