@@ -14,9 +14,10 @@
         <div class="page-actions">
             <div>
                 <h5 class="mb-1">Report Library</h5>
-                <div class="lead">Metadata records only, no file upload required.</div>
+                <div class="lead">Metadata records and uploaded firewall audit PDFs.</div>
             </div>
             <div class="toolbar-group">
+                <a th:href="@{/reports/upload}" class="btn btn-primary">Upload Audit Report</a>
                 <a th:href="@{/reports/new}" class="btn btn-primary">Add Report</a>
             </div>
         </div>
@@ -28,26 +29,31 @@
                         <thead>
                         <tr>
                             <th>File Name</th>
-                            <th>File Path</th>
+                            <th>Site</th>
+                            <th>Device</th>
+                            <th>Audit Date</th>
                             <th>Version</th>
+                            <th>Risk Score</th>
                             <th>Upload Date</th>
-                            <th>Uploaded By</th>
                             <th class="text-nowrap">Actions</th>
                         </tr>
                         </thead>
                         <tbody>
                         <tr th:if="${#lists.isEmpty(reports)}">
-                            <td colspan="6" class="text-center py-5 text-muted">No reports found.</td>
+                            <td colspan="8" class="text-center py-5 text-muted">No reports found.</td>
                         </tr>
                         <tr th:each="report : ${reports}">
                             <td><a th:href="@{/reports/details/{id}(id=${report.id})}" class="fw-semibold text-decoration-none" th:text="${report.fileName}"></a></td>
-                            <td th:text="${report.filePath != null ? report.filePath : '-'}"></td>
+                            <td th:text="${report.siteName != null ? report.siteName : (report.audit != null && report.audit.site != null ? report.audit.site.name : '-')}"></td>
+                            <td th:text="${report.deviceModel != null ? report.deviceModel : (report.vendor != null ? report.vendor : '-')}"></td>
+                            <td th:text="${report.auditDate != null ? #temporals.format(report.auditDate, 'yyyy-MM-dd') : (report.audit != null && report.audit.auditDate != null ? #temporals.format(report.audit.auditDate, 'yyyy-MM-dd') : '-')}"></td>
                             <td th:text="${report.version != null ? report.version : '-'}"></td>
+                            <td th:text="${report.riskScore != null ? report.riskScore : (report.audit != null && report.audit.overallScore != null ? report.audit.overallScore : '-')}"></td>
                             <td th:text="${report.uploadDate != null ? #temporals.format(report.uploadDate, 'yyyy-MM-dd') : '-'}"></td>
-                            <td th:text="${report.uploadedBy != null ? report.uploadedBy : '-'}"></td>
                             <td class="text-nowrap">
                                 <div class="btn-group btn-group-sm">
                                     <a th:href="@{/reports/details/{id}(id=${report.id})}" class="btn btn-outline-secondary">View</a>
+                                    <a th:href="@{/reports/{id}/download(id=${report.id})}" class="btn btn-outline-success">Download</a>
                                     <a th:href="@{/reports/edit/{id}(id=${report.id})}" class="btn btn-outline-primary">Edit</a>
                                     <form th:action="@{/reports/{id}/delete(id=${report.id})}" method="post" class="d-inline" onsubmit="return confirm('Delete this report permanently?');">
                                         <button type="submit" class="btn btn-outline-danger">Delete</button>

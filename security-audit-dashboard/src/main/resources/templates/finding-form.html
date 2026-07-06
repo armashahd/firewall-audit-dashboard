@@ -34,6 +34,10 @@
                         <textarea rows="4" class="form-control" th:field="*{description}" th:classappend="${descriptionError} ? ' is-invalid' : ''"></textarea>
                         <div class="invalid-feedback d-block" th:if="${descriptionError}" th:text="${descriptionError}"></div>
                     </div>
+                    <div class="col-12">
+                        <label class="form-label">Impact</label>
+                        <textarea rows="3" class="form-control" th:field="*{impact}"></textarea>
+                    </div>
                     <div class="col-md-4">
                         <label class="form-label">Severity</label>
                         <select class="form-select" th:field="*{severity}" th:classappend="${severityError} ? ' is-invalid' : ''">

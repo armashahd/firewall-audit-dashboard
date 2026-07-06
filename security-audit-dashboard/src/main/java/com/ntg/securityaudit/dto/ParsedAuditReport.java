@@ -1,69 +1,31 @@
-package com.ntg.securityaudit.entity;
-
-import jakarta.persistence.*;
+package com.ntg.securityaudit.dto;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
-@Entity
-@Table(name = "reports")
-public class Report {
+public class ParsedAuditReport {
 
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Audit getAudit() {
-        return audit;
-    }
-
-    public void setAudit(Audit audit) {
-        this.audit = audit;
-    }
-
-    public String getFileName() {
-        return fileName;
-    }
-
-    public void setFileName(String fileName) {
-        this.fileName = fileName;
-    }
-
-    public String getFilePath() {
-        return filePath;
-    }
-
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
-    }
-
-    public String getVersion() {
-        return version;
-    }
-
-    public void setVersion(String version) {
-        this.version = version;
-    }
-
-    public LocalDate getUploadDate() {
-        return uploadDate;
-    }
-
-    public void setUploadDate(LocalDate uploadDate) {
-        this.uploadDate = uploadDate;
-    }
-
-    public String getUploadedBy() {
-        return uploadedBy;
-    }
-
-    public void setUploadedBy(String uploadedBy) {
-        this.uploadedBy = uploadedBy;
-    }
+    private String siteName;
+    private String country;
+    private String deviceType;
+    private String deviceModel;
+    private String hostname;
+    private String ipAddress;
+    private String vendor;
+    private LocalDate auditDate;
+    private String reportVersion;
+    private String auditor;
+    private LocalDate assessmentDate;
+    private Integer riskScore;
+    private Integer passedComplianceCount;
+    private Integer failedComplianceCount;
+    private Integer criticalCount;
+    private Integer highCount;
+    private Integer mediumCount;
+    private Integer lowCount;
+    private Integer infoCount;
+    private List<ParsedFinding> findings = new ArrayList<>();
 
     public String getSiteName() {
         return siteName;
@@ -127,6 +89,14 @@ public class Report {
 
     public void setAuditDate(LocalDate auditDate) {
         this.auditDate = auditDate;
+    }
+
+    public String getReportVersion() {
+        return reportVersion;
+    }
+
+    public void setReportVersion(String reportVersion) {
+        this.reportVersion = reportVersion;
     }
 
     public String getAuditor() {
@@ -209,60 +179,11 @@ public class Report {
         this.infoCount = infoCount;
     }
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    public List<ParsedFinding> getFindings() {
+        return findings;
+    }
 
-    @ManyToOne
-    @JoinColumn(name = "audit_id", nullable = false)
-    private Audit audit;
-
-    @Column(nullable = false)
-    private String fileName;
-
-    @Column(nullable = false)
-    private String filePath;
-
-    private String version;
-
-    private LocalDate uploadDate;
-
-    private String uploadedBy;
-
-    private String siteName;
-
-    private String country;
-
-    private String deviceType;
-
-    private String deviceModel;
-
-    private String hostname;
-
-    private String ipAddress;
-
-    private String vendor;
-
-    private LocalDate auditDate;
-
-    private String auditor;
-
-    private LocalDate assessmentDate;
-
-    private Integer riskScore;
-
-    private Integer passedComplianceCount;
-
-    private Integer failedComplianceCount;
-
-    private Integer criticalCount;
-
-    private Integer highCount;
-
-    private Integer mediumCount;
-
-    private Integer lowCount;
-
-    private Integer infoCount;
-
+    public void setFindings(List<ParsedFinding> findings) {
+        this.findings = findings;
+    }
 }

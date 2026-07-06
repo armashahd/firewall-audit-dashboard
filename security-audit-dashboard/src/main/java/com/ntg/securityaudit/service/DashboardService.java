@@ -38,17 +38,20 @@ public class DashboardService {
     private final FindingRepository findingRepository;
     private final AuditExceptionRepository auditExceptionRepository;
     private final DatabaseRepairService databaseRepairService;
+    private final DashboardStatisticsService dashboardStatisticsService;
 
     public DashboardService(SiteRepository siteRepository,
                             AuditRepository auditRepository,
                             FindingRepository findingRepository,
                             AuditExceptionRepository auditExceptionRepository,
-                            DatabaseRepairService databaseRepairService) {
+                            DatabaseRepairService databaseRepairService,
+                            DashboardStatisticsService dashboardStatisticsService) {
         this.siteRepository = siteRepository;
         this.auditRepository = auditRepository;
         this.findingRepository = findingRepository;
         this.auditExceptionRepository = auditExceptionRepository;
         this.databaseRepairService = databaseRepairService;
+        this.dashboardStatisticsService = dashboardStatisticsService;
     }
 
     public DashboardDTO getDashboardData() {
@@ -132,7 +135,7 @@ public class DashboardService {
         int completionPercentage = (int) Math.round(averageAuditCompletionPercentage(audits));
 
         dto.setOverallSecurityScore(overallSecurityScore);
-        dto.setCurrentRiskLevel(resolveCurrentRiskLevel(findings, overallSecurityScore));
+        dto.setCurrentRiskLevel(dashboardStatisticsService.resolveRiskLevel(findings, overallSecurityScore));
         dto.setTotalSites((long) sites.size());
         dto.setTotalAudits((long) audits.size());
         dto.setTotalFindings(totalFindings);
@@ -348,7 +351,7 @@ public class DashboardService {
                     item.setOpenFindings(open);
                     item.setCriticalFindings(critical);
                     item.setOverdueFindings(overdue);
-                    item.setRiskLevel(resolveCurrentRiskLevel(siteFindings, score));
+                    item.setRiskLevel(dashboardStatisticsService.resolveRiskLevel(siteFindings, score));
                     return item;
                 })
                 .toList();
@@ -550,21 +553,15 @@ public class DashboardService {
     }
 
     private boolean isOpenOrInProgress(Finding finding) {
-        return finding.getStatus() != null && finding.getStatus().isOpenOrInProgress();
+        return dashboardStatisticsService.isOpenOrInProgress(finding);
     }
 
     private boolean isOverdue(Finding finding) {
-        return isOpenOrInProgress(finding) && finding.getDueDate() != null && finding.getDueDate().isBefore(LocalDate.now());
+        return dashboardStatisticsService.isOverdue(finding);
     }
 
     private AuditExceptionStatus effectiveExceptionStatus(AuditException exception) {
-        if (exception.getStatus() == AuditExceptionStatus.CLOSED) {
-            return AuditExceptionStatus.CLOSED;
-        }
-        if (exception.getExpiryDate() != null && exception.getExpiryDate().isBefore(LocalDate.now())) {
-            return AuditExceptionStatus.EXPIRED;
-        }
-        return AuditExceptionStatus.ACTIVE;
+        return dashboardStatisticsService.effectiveExceptionStatus(exception);
     }
 
     private int severityRank(Severity severity) {

@@ -42,6 +42,14 @@ public class Finding {
         this.description = description;
     }
 
+    public String getImpact() {
+        return impact;
+    }
+
+    public void setImpact(String impact) {
+        this.impact = impact;
+    }
+
     public Severity getSeverity() {
         return severity;
     }
@@ -111,6 +119,9 @@ public class Finding {
 
     @Column(length = 3000)
     private String description;
+
+    @Column(length = 3000)
+    private String impact;
 
     @Enumerated(EnumType.STRING)
     private Severity severity;

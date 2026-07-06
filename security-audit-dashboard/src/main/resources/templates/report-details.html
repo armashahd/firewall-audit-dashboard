@@ -18,6 +18,7 @@
             </div>
             <div class="toolbar-group">
                 <a th:href="@{/reports}" class="btn btn-outline-secondary">Back</a>
+                <a th:href="@{/reports/{id}/download(id=${report.id})}" class="btn btn-outline-success">Download Original</a>
                 <a th:href="@{/reports/edit/{id}(id=${report.id})}" class="btn btn-outline-primary">Edit</a>
                 <form th:action="@{/reports/{id}/delete(id=${report.id})}" method="post" onsubmit="return confirm('Delete this report permanently?');">
                     <button type="submit" class="btn btn-outline-danger">Delete</button>
@@ -34,6 +35,18 @@
                     <div class="col-md-6"><div class="stat-label">Version</div><div class="fw-semibold fs-5" th:text="${report.version != null ? report.version : '-'}"></div></div>
                     <div class="col-md-6"><div class="stat-label">Upload Date</div><div class="fw-semibold fs-5" th:text="${report.uploadDate != null ? #temporals.format(report.uploadDate, 'yyyy-MM-dd') : '-'}"></div></div>
                     <div class="col-md-6"><div class="stat-label">Uploaded By</div><div class="fw-semibold fs-5" th:text="${report.uploadedBy != null ? report.uploadedBy : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Site Name</div><div class="fw-semibold fs-5" th:text="${report.siteName != null ? report.siteName : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Country</div><div class="fw-semibold fs-5" th:text="${report.country != null ? report.country : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Vendor</div><div class="fw-semibold fs-5" th:text="${report.vendor != null ? report.vendor : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Device Type</div><div class="fw-semibold fs-5" th:text="${report.deviceType != null ? report.deviceType : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Device Model</div><div class="fw-semibold fs-5" th:text="${report.deviceModel != null ? report.deviceModel : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Hostname</div><div class="fw-semibold fs-5" th:text="${report.hostname != null ? report.hostname : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">IP Address</div><div class="fw-semibold fs-5" th:text="${report.ipAddress != null ? report.ipAddress : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Audit Date</div><div class="fw-semibold fs-5" th:text="${report.auditDate != null ? #temporals.format(report.auditDate, 'yyyy-MM-dd') : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Assessment Date</div><div class="fw-semibold fs-5" th:text="${report.assessmentDate != null ? #temporals.format(report.assessmentDate, 'yyyy-MM-dd') : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Risk Score</div><div class="fw-semibold fs-5" th:text="${report.riskScore != null ? report.riskScore : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Compliance Passed / Failed</div><div class="fw-semibold fs-5" th:text="${(report.passedComplianceCount != null ? report.passedComplianceCount : 0) + ' / ' + (report.failedComplianceCount != null ? report.failedComplianceCount : 0)}"></div></div>
+                    <div class="col-12"><div class="stat-label">Severity Counts</div><div class="fw-semibold fs-5" th:text="${'Critical ' + (report.criticalCount != null ? report.criticalCount : 0) + ', High ' + (report.highCount != null ? report.highCount : 0) + ', Medium ' + (report.mediumCount != null ? report.mediumCount : 0) + ', Low ' + (report.lowCount != null ? report.lowCount : 0) + ', Info ' + (report.infoCount != null ? report.infoCount : 0)}"></div></div>
                 </div>
             </div>
         </div>

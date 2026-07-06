@@ -15,6 +15,7 @@ import com.ntg.securityaudit.repository.FindingRepository;
 import com.ntg.securityaudit.repository.ReportRepository;
 import com.ntg.securityaudit.repository.SiteRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -36,24 +37,30 @@ public class DataInitializer implements CommandLineRunner {
     private final FindingRepository findingRepository;
     private final ReportRepository reportRepository;
     private final AuditExceptionRepository auditExceptionRepository;
+    private final boolean demoDataEnabled;
 
     public DataInitializer(JdbcTemplate jdbcTemplate,
                            SiteRepository siteRepository,
                            AuditRepository auditRepository,
                            FindingRepository findingRepository,
                            ReportRepository reportRepository,
-                           AuditExceptionRepository auditExceptionRepository) {
+                           AuditExceptionRepository auditExceptionRepository,
+                           @Value("${app.demo-data.enabled:false}") boolean demoDataEnabled) {
         this.jdbcTemplate = jdbcTemplate;
         this.siteRepository = siteRepository;
         this.auditRepository = auditRepository;
         this.findingRepository = findingRepository;
         this.reportRepository = reportRepository;
         this.auditExceptionRepository = auditExceptionRepository;
+        this.demoDataEnabled = demoDataEnabled;
     }
 
     @Override
     public void run(String... args) {
         cleanupOrphanRecords();
+        if (!demoDataEnabled) {
+            return;
+        }
         seedSites();
         seedAudits();
         seedFindings();

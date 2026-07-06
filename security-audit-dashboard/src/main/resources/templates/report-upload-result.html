@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Report Import Result</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: layout('reports', 'Report Import Result', 'Audit report processing summary.', ~{::content})}">
+    <section th:fragment="content" class="content-grid">
+        <div class="card dashboard-card">
+            <div class="card-body p-4 p-lg-5">
+                <div th:class="${result.duplicate ? 'alert alert-warning' : 'alert alert-success'}" th:text="${result.message}"></div>
+                <div class="row g-4">
+                    <div class="col-md-4"><div class="summary-metric"><div class="stat-label">Site</div><div class="stat-value fs-5" th:text="${result.siteName != null ? result.siteName : '-'}"></div></div></div>
+                    <div class="col-md-4"><div class="summary-metric"><div class="stat-label">Audit Round</div><div class="stat-value fs-5" th:text="${result.auditRound != null ? 'Round ' + result.auditRound : '-'}"></div></div></div>
+                    <div class="col-md-4"><div class="summary-metric"><div class="stat-label">Findings Created</div><div class="stat-value fs-5" th:text="${result.findingCount}">0</div></div></div>
+                </div>
+                <div class="toolbar-group mt-4">
+                    <a th:if="${result.reportId != null}" th:href="@{/reports/details/{id}(id=${result.reportId})}" class="btn btn-primary">View Report</a>
+                    <a th:href="@{/}" class="btn btn-outline-primary">View Dashboard</a>
+                    <a th:href="@{/findings}" class="btn btn-outline-secondary">View Findings</a>
+                    <a th:href="@{/reports}" class="btn btn-outline-secondary">Back to Reports</a>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>
