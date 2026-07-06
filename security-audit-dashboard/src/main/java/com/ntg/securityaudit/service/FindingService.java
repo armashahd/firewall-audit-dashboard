@@ -10,16 +10,20 @@ import java.util.List;
 public class FindingService {
 
     private final FindingRepository findingRepository;
+    private final DatabaseRepairService databaseRepairService;
 
-    public FindingService(FindingRepository findingRepository) {
+    public FindingService(FindingRepository findingRepository, DatabaseRepairService databaseRepairService) {
         this.findingRepository = findingRepository;
+        this.databaseRepairService = databaseRepairService;
     }
 
     public List<Finding> getAllFindings() {
+        databaseRepairService.repairIfNeeded();
         return findingRepository.findAll();
     }
 
     public Finding getFindingById(Long id) {
+        databaseRepairService.repairIfNeeded();
         return findingRepository.findById(id).orElse(null);
     }
 

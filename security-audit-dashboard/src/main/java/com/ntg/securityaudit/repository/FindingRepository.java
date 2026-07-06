@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
+import java.util.List;
 
 @Repository
 public interface FindingRepository extends JpaRepository<Finding, Long> {
@@ -16,5 +17,7 @@ public interface FindingRepository extends JpaRepository<Finding, Long> {
     long countByStatusIn(Collection<FindingStatus> statuses);
 
     long countBySeverity(Severity severity);
+
+    List<Finding> findByAuditIdIn(Collection<Long> auditIds);
 
 }

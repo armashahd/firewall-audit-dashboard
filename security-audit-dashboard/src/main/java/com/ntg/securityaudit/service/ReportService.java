@@ -10,16 +10,20 @@ import java.util.List;
 public class ReportService {
 
     private final ReportRepository reportRepository;
+    private final DatabaseRepairService databaseRepairService;
 
-    public ReportService(ReportRepository reportRepository) {
+    public ReportService(ReportRepository reportRepository, DatabaseRepairService databaseRepairService) {
         this.reportRepository = reportRepository;
+        this.databaseRepairService = databaseRepairService;
     }
 
     public List<Report> getAllReports() {
+        databaseRepairService.repairIfNeeded();
         return reportRepository.findAll();
     }
 
     public Report getReportById(Long id) {
+        databaseRepairService.repairIfNeeded();
         return reportRepository.findById(id).orElse(null);
     }
 
