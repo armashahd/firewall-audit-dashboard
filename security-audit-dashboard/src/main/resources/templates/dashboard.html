@@ -11,6 +11,64 @@
 
 <div th:replace="~{fragments/layout :: layout('dashboard', 'Dashboard', 'Security posture, audit activity, and open risk across the estate.', ~{::content})}">
     <section th:fragment="content" class="content-grid">
+        <form class="card dashboard-card dashboard-filter-card" method="get" th:action="@{/}">
+            <div class="card-body">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3 col-xl-2">
+                        <label class="form-label">Site</label>
+                        <select class="form-select" name="siteId">
+                            <option value="">All Sites</option>
+                            <option th:each="site : ${sites}" th:value="${site.id}" th:text="${site.name}" th:selected="${filter.siteId != null && filter.siteId == site.id}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-xl-2">
+                        <label class="form-label">Audit Round</label>
+                        <select class="form-select" name="auditRound">
+                            <option value="">All Rounds</option>
+                            <option th:each="round : ${dashboard.auditRoundOptions}" th:value="${round}" th:text="${'Round ' + round}" th:selected="${filter.auditRound != null && filter.auditRound == round}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-xl-2">
+                        <label class="form-label">Category</label>
+                        <select class="form-select" name="category">
+                            <option value="">All Categories</option>
+                            <option th:each="category : ${dashboard.categoryOptions}" th:value="${category}" th:text="${category}" th:selected="${filter.category != null && filter.category == category}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-xl-2">
+                        <label class="form-label">Severity</label>
+                        <select class="form-select" name="severity">
+                            <option value="">All Severities</option>
+                            <option th:each="severity : ${severities}" th:value="${severity.name()}" th:text="${severity.name()}" th:selected="${filter.severity != null && filter.severity == severity}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-xl-2">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="status">
+                            <option value="">All Statuses</option>
+                            <option th:each="status : ${statuses}" th:value="${status.name()}" th:text="${status.displayName}" th:selected="${filter.status != null && filter.status == status}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-xl-2">
+                        <label class="form-label">Year</label>
+                        <select class="form-select" name="year">
+                            <option value="">All Years</option>
+                            <option th:each="year : ${dashboard.yearOptions}" th:value="${year}" th:text="${year}" th:selected="${filter.year != null && filter.year == year}"></option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <div class="toolbar-group">
+                            <button type="submit" class="btn btn-primary">Apply Filters</button>
+                            <a th:href="@{/}" class="btn btn-outline-secondary">Reset</a>
+                            <button type="submit" formaction="/dashboard/export/excel" class="btn btn-outline-success">Export Excel</button>
+                            <button type="submit" formaction="/dashboard/export/pdf" class="btn btn-outline-primary">Export PDF</button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Print</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+
         <div class="row g-3 align-items-stretch">
             <div class="col-xl-8">
                 <div class="card dashboard-card h-100">
@@ -28,11 +86,14 @@
                                 <div class="summary-metric">
                                     <div class="stat-label">Overall Security Score</div>
                                     <div class="stat-value" th:text="${dashboard.overallSecurityScore + '%'}">0%</div>
-                                    <div class="stat-note">Average security posture</div>
+                                    <div class="stat-note">
+                                        <span>Average security posture</span>
+                                        <span class="d-block" th:classappend="${dashboard.scoreTrendClass}" th:text="${dashboard.scoreTrendLabel}"></span>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-6 col-xl-3">
-                                <div class="summary-metric">
+                                <a th:href="@{/findings(severity='CRITICAL')}" class="summary-metric clickable-metric text-decoration-none text-reset">
                                     <div class="stat-label">Current Risk Level</div>
                                     <div class="mt-1">
                                         <span th:switch="${dashboard.currentRiskLevel}">
@@ -44,21 +105,21 @@
                                         </span>
                                     </div>
                                     <div class="stat-note">Risk based on current evidence</div>
-                                </div>
+                                </a>
                             </div>
                             <div class="col-6 col-xl-3">
-                                <div class="summary-metric">
+                                <a th:href="@{/sites}" class="summary-metric clickable-metric text-decoration-none text-reset">
                                     <div class="stat-label">Total Sites</div>
                                     <div class="stat-value" th:text="${dashboard.totalSites}">0</div>
                                     <div class="stat-note">Tracked firewall locations</div>
-                                </div>
+                                </a>
                             </div>
                             <div class="col-6 col-xl-3">
-                                <div class="summary-metric">
+                                <a th:href="@{/audits}" class="summary-metric clickable-metric text-decoration-none text-reset">
                                     <div class="stat-label">Total Audits</div>
                                     <div class="stat-value" th:text="${dashboard.totalAudits}">0</div>
                                     <div class="stat-note">All completed audit rounds</div>
-                                </div>
+                                </a>
                             </div>
                             <div class="col-6 col-xl-3">
                                 <div class="summary-metric">
@@ -68,18 +129,38 @@
                                 </div>
                             </div>
                             <div class="col-6 col-xl-3">
-                                <div class="summary-metric">
+                                <a th:href="@{/findings(status='OPEN')}" class="summary-metric clickable-metric text-decoration-none text-reset">
                                     <div class="stat-label">Open Findings</div>
                                     <div class="stat-value text-danger" th:text="${dashboard.openFindings}">0</div>
-                                    <div class="stat-note">Requires active remediation</div>
-                                </div>
+                                    <div class="stat-note">
+                                        <span>Requires active remediation</span>
+                                        <span class="d-block" th:classappend="${dashboard.openFindingsTrendClass}" th:text="${dashboard.openFindingsTrendLabel}"></span>
+                                    </div>
+                                </a>
                             </div>
                             <div class="col-6 col-xl-3">
-                                <div class="summary-metric">
+                                <a th:href="@{/findings(status='CLOSED')}" class="summary-metric clickable-metric text-decoration-none text-reset">
                                     <div class="stat-label">Closed Findings</div>
                                     <div class="stat-value text-success" th:text="${dashboard.closedFindings}">0</div>
-                                    <div class="stat-note">Resolved or accepted</div>
-                                </div>
+                                    <div class="stat-note">
+                                        <span>Resolved findings</span>
+                                        <span class="d-block" th:classappend="${dashboard.closedFindingsTrendClass}" th:text="${dashboard.closedFindingsTrendLabel}"></span>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="col-6 col-xl-3">
+                                <a th:href="@{/findings(status='ACCEPTED_RISK')}" class="summary-metric clickable-metric text-decoration-none text-reset">
+                                    <div class="stat-label">Accepted Risk</div>
+                                    <div class="stat-value text-secondary" th:text="${dashboard.acceptedRiskFindings}">0</div>
+                                    <div class="stat-note">Linked to exceptions</div>
+                                </a>
+                            </div>
+                            <div class="col-6 col-xl-3">
+                                <a th:href="@{/findings(overdue=true)}" class="summary-metric clickable-metric text-decoration-none text-reset">
+                                    <div class="stat-label">Overdue Findings</div>
+                                    <div class="stat-value text-danger" th:text="${dashboard.overdueFindings}">0</div>
+                                    <div class="stat-note">Past remediation deadline</div>
+                                </a>
                             </div>
                             <div class="col-6 col-xl-3">
                                 <div class="summary-metric">
@@ -92,8 +173,25 @@
                                 <div class="summary-metric">
                                     <div class="stat-label">Improvement Completion</div>
                                     <div class="stat-value" th:text="${dashboard.improvementCompletionPercentage + '%'}">0%</div>
-                                    <div class="stat-note">Closed vs total findings</div>
+                                    <div class="stat-note">
+                                        <span>Closed vs total findings</span>
+                                        <span class="d-block" th:classappend="${dashboard.completionTrendClass}" th:text="${dashboard.completionTrendLabel}"></span>
+                                    </div>
                                 </div>
+                            </div>
+                            <div class="col-6 col-xl-3">
+                                <a th:href="@{/exceptions(status='ACTIVE')}" class="summary-metric clickable-metric text-decoration-none text-reset">
+                                    <div class="stat-label">Active Exceptions</div>
+                                    <div class="stat-value text-warning" th:text="${dashboard.totalActiveExceptions}">0</div>
+                                    <div class="stat-note">Approved and in effect</div>
+                                </a>
+                            </div>
+                            <div class="col-6 col-xl-3">
+                                <a th:href="@{/exceptions(status='EXPIRED')}" class="summary-metric clickable-metric text-decoration-none text-reset">
+                                    <div class="stat-label">Expired Exceptions</div>
+                                    <div class="stat-value text-danger" th:text="${dashboard.totalExpiredExceptions}">0</div>
+                                    <div class="stat-note">Past expiry date</div>
+                                </a>
                             </div>
                             <div class="col-6 col-xl-3">
                                 <div class="summary-metric">
@@ -299,6 +397,82 @@
             </div>
         </div>
 
+        <div class="row g-3">
+            <div class="col-xl-7">
+                <div class="card dashboard-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="mb-1">Site Security Heatmap</h5>
+                                <div class="text-muted">Latest score and active risk by site.</div>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle">
+                                <thead>
+                                <tr>
+                                    <th>Site</th>
+                                    <th>Latest Audit Score</th>
+                                    <th>Open</th>
+                                    <th>Critical</th>
+                                    <th>Overdue</th>
+                                    <th>Risk Level</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:if="${#lists.isEmpty(dashboard.siteHeatmap)}">
+                                    <td colspan="6" class="text-center py-4 text-muted">No site heatmap data available.</td>
+                                </tr>
+                                <tr th:each="siteRisk : ${dashboard.siteHeatmap}">
+                                    <td class="fw-semibold" th:text="${siteRisk.siteName}">Site</td>
+                                    <td><span class="badge bg-primary" th:text="${siteRisk.latestAuditScore + '%'}">0%</span></td>
+                                    <td th:text="${siteRisk.openFindings}">0</td>
+                                    <td th:text="${siteRisk.criticalFindings}">0</td>
+                                    <td th:text="${siteRisk.overdueFindings}">0</td>
+                                    <td>
+                                        <span th:switch="${siteRisk.riskLevel}">
+                                            <span th:case="'Critical'" class="badge bg-danger">Critical</span>
+                                            <span th:case="'High'" class="badge bg-warning text-dark">High</span>
+                                            <span th:case="'Medium'" class="badge bg-info text-dark">Medium</span>
+                                            <span th:case="'Low'" class="badge bg-success">Low</span>
+                                            <span th:case="*" class="badge bg-secondary">Unknown</span>
+                                        </span>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-5">
+                <div class="card dashboard-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="mb-1">Recent Changes</h5>
+                                <div class="text-muted">Latest audit, finding, and exception activity.</div>
+                            </div>
+                        </div>
+                        <div class="list-group list-group-flush activity-feed">
+                            <div th:if="${#lists.isEmpty(dashboard.activityFeed)}" class="text-muted py-4 text-center">
+                                No recent activity available.
+                            </div>
+                            <div th:each="activity : ${dashboard.activityFeed}" class="list-group-item px-0 py-3">
+                                <div class="d-flex justify-content-between align-items-start gap-3">
+                                    <div>
+                                        <span class="badge" th:classappend="${activity.badgeClass}" th:text="${activity.type}">Type</span>
+                                        <div class="fw-semibold mt-2" th:text="${activity.message}">Activity message</div>
+                                    </div>
+                                    <div class="text-muted small text-nowrap" th:text="${activity.activityDate != null ? #temporals.format(activity.activityDate, 'dd MMM yyyy') : '-'}">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="card dashboard-card">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-3">
@@ -340,15 +514,58 @@
                             </td>
                             <td>
                                 <span th:switch="${action.status}">
-                                    <span th:case="'OPEN'" class="badge bg-danger">Open</span>
-                                    <span th:case="'IN PROGRESS'" class="badge bg-warning text-dark">In Progress</span>
-                                    <span th:case="'ACCEPTED RISK'" class="badge bg-secondary">Accepted Risk</span>
-                                    <span th:case="'CLOSED'" class="badge bg-success">Closed</span>
+                                    <span th:case="'Open'" class="badge bg-danger">Open</span>
+                                    <span th:case="'In Progress'" class="badge bg-warning text-dark">In Progress</span>
+                                    <span th:case="'Accepted Risk'" class="badge bg-secondary">Accepted Risk</span>
+                                    <span th:case="'Closed'" class="badge bg-success">Closed</span>
                                     <span th:case="*" class="badge bg-light text-dark border">N/A</span>
                                 </span>
                             </td>
                             <td th:text="${action.targetDate != null ? #temporals.format(action.targetDate, 'dd MMM yyyy') : '-'}"></td>
                             <td class="text-muted" th:text="${action.notes != null ? action.notes : '-'}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card dashboard-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h5 class="mb-1">Upcoming Exception Expiry</h5>
+                        <div class="text-muted">Approved exceptions expiring soon.</div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                        <tr>
+                            <th>Exception</th>
+                            <th>Site</th>
+                            <th>Audit</th>
+                            <th>Status</th>
+                            <th>Expiry Date</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(dashboard.upcomingExceptionExpiries)}">
+                            <td colspan="5" class="text-center py-4 text-muted">No upcoming exception expiries.</td>
+                        </tr>
+                        <tr th:each="exceptionExpiry : ${dashboard.upcomingExceptionExpiries}">
+                            <td class="fw-semibold" th:text="${exceptionExpiry.exceptionName}">Exception</td>
+                            <td th:text="${exceptionExpiry.siteName}">Site</td>
+                            <td th:text="${exceptionExpiry.auditLabel}">Audit</td>
+                            <td>
+                                <span th:switch="${exceptionExpiry.status}">
+                                    <span th:case="'ACTIVE'" class="badge bg-success">Active</span>
+                                    <span th:case="'EXPIRED'" class="badge bg-warning text-dark">Expired</span>
+                                    <span th:case="'CLOSED'" class="badge bg-secondary">Closed</span>
+                                    <span th:case="*" class="badge bg-light text-dark border">N/A</span>
+                                </span>
+                            </td>
+                            <td th:text="${exceptionExpiry.expiryDate != null ? #temporals.format(exceptionExpiry.expiryDate, 'dd MMM yyyy') : '-'}"></td>
                         </tr>
                         </tbody>
                     </table>

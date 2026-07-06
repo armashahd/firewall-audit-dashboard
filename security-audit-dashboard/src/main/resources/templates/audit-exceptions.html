@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Audit Exceptions</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: layout('exceptions', 'Audit Exceptions', 'Track approved exceptions and their expiry dates.', ~{::content})}">
+    <section th:fragment="content" class="content-grid">
+        <div class="page-actions">
+            <div>
+                <h5 class="mb-1">Exception Register</h5>
+                <div class="lead">Approved deviations, temporary acceptances, and closure status.</div>
+            </div>
+            <div class="toolbar-group">
+                <a th:href="@{/audit-exceptions/new}" class="btn btn-primary">Add Exception</a>
+            </div>
+        </div>
+
+        <div class="card dashboard-card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle">
+                        <thead>
+                        <tr>
+                            <th>Exception Name</th>
+                            <th>Related Site</th>
+                            <th>Related Audit</th>
+                            <th>Approved By</th>
+                            <th>Approval Date</th>
+                            <th>Expiry Date</th>
+                            <th>Status</th>
+                            <th class="text-nowrap">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(auditExceptions)}">
+                            <td colspan="8" class="text-center py-5 text-muted">No audit exceptions found.</td>
+                        </tr>
+                        <tr th:each="auditException : ${auditExceptions}">
+                            <td>
+                                <a th:href="@{/audit-exceptions/details/{id}(id=${auditException.id})}" class="fw-semibold text-decoration-none" th:text="${auditException.exceptionName}"></a>
+                                <div class="text-muted small" th:text="${auditException.description != null ? auditException.description : '-'}"></div>
+                            </td>
+                            <td th:text="${auditException.relatedSite != null ? auditException.relatedSite.name : '-'}"></td>
+                            <td th:text="${auditException.relatedAudit != null ? ('#' + auditException.relatedAudit.id) : '-'}"></td>
+                            <td th:text="${auditException.approvedBy != null ? auditException.approvedBy : '-'}"></td>
+                            <td th:text="${auditException.approvalDate != null ? #temporals.format(auditException.approvalDate, 'yyyy-MM-dd') : '-'}"></td>
+                            <td th:text="${auditException.expiryDate != null ? #temporals.format(auditException.expiryDate, 'yyyy-MM-dd') : '-'}"></td>
+                            <td>
+                                <span th:switch="${auditException.status != null ? auditException.status.name() : ''}">
+                                    <span th:case="'ACTIVE'" class="badge bg-success">Active</span>
+                                    <span th:case="'EXPIRED'" class="badge bg-warning text-dark">Expired</span>
+                                    <span th:case="'CLOSED'" class="badge bg-secondary">Closed</span>
+                                    <span th:case="*" class="badge bg-light text-dark border">N/A</span>
+                                </span>
+                            </td>
+                            <td class="text-nowrap">
+                                <div class="btn-group btn-group-sm">
+                                    <a th:href="@{/audit-exceptions/details/{id}(id=${auditException.id})}" class="btn btn-outline-secondary">View</a>
+                                    <a th:href="@{/audit-exceptions/edit/{id}(id=${auditException.id})}" class="btn btn-outline-primary">Edit</a>
+                                    <form th:action="@{/audit-exceptions/{id}/delete(id=${auditException.id})}" method="post" class="d-inline" onsubmit="return confirm('Delete this exception permanently?');">
+                                        <button type="submit" class="btn btn-outline-danger">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>

@@ -59,11 +59,18 @@ public class SiteService {
                     .map(Audit::getId)
                     .filter(java.util.Objects::nonNull)
                     .collect(Collectors.toList());
+            List<Long> findingIds = findingRepository.findByAuditIdIn(auditIds).stream()
+                    .map(finding -> finding.getId())
+                    .filter(java.util.Objects::nonNull)
+                    .collect(Collectors.toList());
 
             if (!auditIds.isEmpty()) {
+                if (!findingIds.isEmpty()) {
+                    auditExceptionRepository.deleteAll(auditExceptionRepository.findByRelatedFindingIdIn(findingIds));
+                }
                 findingRepository.deleteAll(findingRepository.findByAuditIdIn(auditIds));
                 reportRepository.deleteAll(reportRepository.findByAuditIdIn(auditIds));
-                auditExceptionRepository.deleteAll(auditExceptionRepository.findByAuditIdIn(auditIds));
+                auditExceptionRepository.deleteAll(auditExceptionRepository.findByRelatedAuditIdIn(auditIds));
                 auditRepository.deleteAll(audits);
             }
 

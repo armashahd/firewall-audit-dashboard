@@ -3,9 +3,10 @@
 <body>
 
 <div th:fragment="layout(activeNav, pageTitle, pageSubtitle, content)" class="app-shell">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <aside class="app-sidebar">
         <div class="sidebar-brand">
-            <div class="brand-mark">NTG</div>
+            <img th:src="@{/images/ntg-logo.png}" alt="NTG logo" class="sidebar-logo">
             <div>
                 <div class="brand-title">Firewall Audit</div>
                 <div class="brand-subtitle">Enterprise Console</div>
@@ -37,6 +38,12 @@
                 </span>
                 <span>Findings</span>
             </a>
+            <a th:href="@{/audit-exceptions}" class="nav-link" th:classappend="${activeNav == 'exceptions'} ? ' active' : ''">
+                <span class="nav-icon">
+                    <i class="bi bi-shield-exclamation" aria-hidden="true"></i>
+                </span>
+                <span>Audit Exceptions</span>
+            </a>
             <a th:href="@{/reports}" class="nav-link" th:classappend="${activeNav == 'reports'} ? ' active' : ''">
                 <span class="nav-icon">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l5 5v15H6zM8 10h8V8H8zm0 4h8v-2H8zm0 4h5v-2H8z"/></svg>
@@ -50,11 +57,6 @@
                 <span>Settings</span>
             </a>
         </nav>
-
-        <div class="sidebar-note">
-            <div class="note-label">Environment</div>
-            <div class="note-value">Internal Security Ops</div>
-        </div>
     </aside>
 
     <div class="app-content">

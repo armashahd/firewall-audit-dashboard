@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${formTitle}">Audit Exception Form</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: layout('exceptions', ${formTitle}, 'Create or update an audit exception record.', ~{::content})}">
+    <section th:fragment="content">
+        <div class="card dashboard-card">
+            <div class="card-body p-4 p-lg-5">
+                <div th:if="${errorMessage}" class="alert alert-danger" role="alert" th:text="${errorMessage}"></div>
+
+                <form th:action="@{/audit-exceptions}" th:object="${auditException}" method="post" class="row g-3">
+                    <input type="hidden" th:field="*{id}">
+
+                    <div class="col-md-6">
+                        <label class="form-label">Exception Name</label>
+                        <input type="text" class="form-control" th:field="*{exceptionName}" th:classappend="${exceptionNameError} ? ' is-invalid' : ''" placeholder="Legacy TLS support approved until migration">
+                        <div class="invalid-feedback d-block" th:if="${exceptionNameError}" th:text="${exceptionNameError}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" th:field="*{status}" th:classappend="${statusError} ? ' is-invalid' : ''">
+                            <option value="">Select status</option>
+                            <option th:each="status : ${T(com.ntg.securityaudit.enums.AuditExceptionStatus).values()}" th:value="${status}" th:text="${status.name()}"></option>
+                        </select>
+                        <div class="invalid-feedback d-block" th:if="${statusError}" th:text="${statusError}"></div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Description</label>
+                        <textarea rows="4" class="form-control" th:field="*{description}" th:classappend="${descriptionError} ? ' is-invalid' : ''"></textarea>
+                        <div class="invalid-feedback d-block" th:if="${descriptionError}" th:text="${descriptionError}"></div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Justification</label>
+                        <textarea rows="4" class="form-control" th:field="*{justification}" th:classappend="${justificationError} ? ' is-invalid' : ''"></textarea>
+                        <div class="invalid-feedback d-block" th:if="${justificationError}" th:text="${justificationError}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Related Site</label>
+                        <select class="form-select" name="relatedSiteId" th:classappend="${siteError} ? ' is-invalid' : ''">
+                            <option value="">Select a site</option>
+                            <option th:each="site : ${sites}" th:value="${site.id}" th:text="${site.name}" th:selected="${selectedSiteId != null and selectedSiteId == site.id}"></option>
+                        </select>
+                        <div class="invalid-feedback d-block" th:if="${siteError}" th:text="${siteError}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Related Audit</label>
+                        <select class="form-select" name="relatedAuditId" th:classappend="${auditError} ? ' is-invalid' : ''">
+                            <option value="">Select an audit</option>
+                            <option th:each="audit : ${audits}" th:value="${audit.id}" th:text="${audit.site != null ? (audit.site.name + ' / #' + audit.id) : ('#' + audit.id)}" th:selected="${selectedAuditId != null and selectedAuditId == audit.id}"></option>
+                        </select>
+                        <div class="invalid-feedback d-block" th:if="${auditError}" th:text="${auditError}"></div>
+                        <div class="invalid-feedback d-block" th:if="${relationshipError}" th:text="${relationshipError}"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Approved By</label>
+                        <input type="text" class="form-control" th:field="*{approvedBy}" th:classappend="${approvedByError} ? ' is-invalid' : ''" placeholder="CISO Office">
+                        <div class="invalid-feedback d-block" th:if="${approvedByError}" th:text="${approvedByError}"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Approval Date</label>
+                        <input type="date" class="form-control" name="approvalDate" th:value="${auditException.approvalDate != null ? #temporals.format(auditException.approvalDate, 'yyyy-MM-dd') : ''}" th:classappend="${approvalDateError} ? ' is-invalid' : ''">
+                        <div class="invalid-feedback d-block" th:if="${approvalDateError}" th:text="${approvalDateError}"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Expiry Date</label>
+                        <input type="date" class="form-control" name="expiryDate" th:value="${auditException.expiryDate != null ? #temporals.format(auditException.expiryDate, 'yyyy-MM-dd') : ''}" th:classappend="${expiryDateError} ? ' is-invalid' : ''">
+                        <div class="invalid-feedback d-block" th:if="${expiryDateError}" th:text="${expiryDateError}"></div>
+                    </div>
+
+                    <div class="col-12 d-flex flex-wrap gap-2 pt-2">
+                        <button type="submit" class="btn btn-primary" th:text="${submitLabel}">Save Exception</button>
+                        <a th:href="@{/audit-exceptions}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>

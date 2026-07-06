@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${auditException.exceptionName}">Audit Exception Details</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: layout('exceptions', ${auditException.exceptionName}, 'Detailed exception record and approval history.', ~{::content})}">
+    <section th:fragment="content">
+        <div class="page-actions">
+            <div>
+                <h5 class="mb-1">Exception Information</h5>
+                <div class="lead">Review approval, scope, and expiry details.</div>
+            </div>
+            <div class="toolbar-group">
+                <a th:href="@{/audit-exceptions}" class="btn btn-outline-secondary">Back</a>
+                <a th:href="@{/audit-exceptions/edit/{id}(id=${auditException.id})}" class="btn btn-outline-primary">Edit</a>
+                <form th:action="@{/audit-exceptions/{id}/delete(id=${auditException.id})}" method="post" onsubmit="return confirm('Delete this exception permanently?');">
+                    <button type="submit" class="btn btn-outline-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card dashboard-card">
+            <div class="card-body p-4 p-lg-5">
+                <div class="row g-4">
+                    <div class="col-md-6"><div class="stat-label">Exception Name</div><div class="fw-semibold fs-5" th:text="${auditException.exceptionName != null ? auditException.exceptionName : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Status</div><div>
+                        <span th:switch="${auditException.status != null ? auditException.status.name() : ''}">
+                            <span th:case="'ACTIVE'" class="badge bg-success">Active</span>
+                            <span th:case="'EXPIRED'" class="badge bg-warning text-dark">Expired</span>
+                            <span th:case="'CLOSED'" class="badge bg-secondary">Closed</span>
+                            <span th:case="*" class="badge bg-light text-dark border">N/A</span>
+                        </span>
+                    </div></div>
+                    <div class="col-md-6"><div class="stat-label">Related Site</div><div class="fw-semibold fs-5" th:text="${auditException.relatedSite != null ? auditException.relatedSite.name : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Related Audit</div><div class="fw-semibold fs-5" th:text="${auditException.relatedAudit != null ? ('#' + auditException.relatedAudit.id) : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Approved By</div><div class="fw-semibold fs-5" th:text="${auditException.approvedBy != null ? auditException.approvedBy : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Approval Date</div><div class="fw-semibold fs-5" th:text="${auditException.approvalDate != null ? #temporals.format(auditException.approvalDate, 'yyyy-MM-dd') : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Expiry Date</div><div class="fw-semibold fs-5" th:text="${auditException.expiryDate != null ? #temporals.format(auditException.expiryDate, 'yyyy-MM-dd') : '-'}"></div></div>
+                    <div class="col-12"><div class="stat-label">Description</div><div class="fw-semibold" style="white-space:pre-wrap;" th:text="${auditException.description != null ? auditException.description : '-'}"></div></div>
+                    <div class="col-12"><div class="stat-label">Justification</div><div class="fw-semibold" style="white-space:pre-wrap;" th:text="${auditException.justification != null ? auditException.justification : '-'}"></div></div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>

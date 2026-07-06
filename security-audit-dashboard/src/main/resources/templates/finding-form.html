@@ -46,7 +46,7 @@
                         <label class="form-label">Status</label>
                         <select class="form-select" th:field="*{status}" th:classappend="${statusError} ? ' is-invalid' : ''">
                             <option value="">Select status</option>
-                            <option th:each="status : ${T(com.ntg.securityaudit.enums.FindingStatus).values()}" th:value="${status}" th:text="${status.name()}"></option>
+                            <option th:each="status : ${T(com.ntg.securityaudit.enums.FindingStatus).values()}" th:value="${status}" th:text="${status.displayName}"></option>
                         </select>
                         <div class="invalid-feedback d-block" th:if="${statusError}" th:text="${statusError}"></div>
                     </div>
@@ -66,7 +66,8 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Due Date</label>
-                        <input type="date" class="form-control" name="dueDate" th:value="${finding.dueDate != null ? #temporals.format(finding.dueDate, 'yyyy-MM-dd') : ''}">
+                        <input type="date" class="form-control" name="dueDate" th:value="${finding.dueDate != null ? #temporals.format(finding.dueDate, 'yyyy-MM-dd') : ''}" th:classappend="${dueDateError} ? ' is-invalid' : ''">
+                        <div class="invalid-feedback d-block" th:if="${dueDateError}" th:text="${dueDateError}"></div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Closed Date</label>

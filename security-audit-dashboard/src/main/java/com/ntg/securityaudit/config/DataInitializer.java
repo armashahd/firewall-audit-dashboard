@@ -5,6 +5,7 @@ import com.ntg.securityaudit.entity.AuditException;
 import com.ntg.securityaudit.entity.Finding;
 import com.ntg.securityaudit.entity.Report;
 import com.ntg.securityaudit.entity.Site;
+import com.ntg.securityaudit.enums.AuditExceptionStatus;
 import com.ntg.securityaudit.enums.FindingStatus;
 import com.ntg.securityaudit.enums.Severity;
 import com.ntg.securityaudit.enums.SiteStatus;
@@ -56,8 +57,10 @@ public class DataInitializer implements CommandLineRunner {
         seedSites();
         seedAudits();
         seedFindings();
+        normalizeAcceptedRiskFindings();
         seedReports();
         seedExceptions();
+        normalizeAuditExceptions();
         refreshSiteSnapshots();
     }
 
@@ -189,6 +192,36 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
+    private void normalizeAcceptedRiskFindings() {
+        for (Finding finding : findingRepository.findAll()) {
+            if (finding.getStatus() != FindingStatus.ACCEPTED_RISK || finding.getId() == null) {
+                continue;
+            }
+
+            AuditException linkedException = auditExceptionRepository.findTopByRelatedFindingIdOrderByIdDesc(finding.getId());
+            if (linkedException != null) {
+                if (linkedException.getStatus() != AuditExceptionStatus.CLOSED) {
+                    linkedException.setStatus(AuditExceptionStatus.ACTIVE);
+                    auditExceptionRepository.save(linkedException);
+                }
+                continue;
+            }
+
+            AuditException exceptionRecord = new AuditException();
+            exceptionRecord.setRelatedSite(finding.getAudit() != null ? finding.getAudit().getSite() : null);
+            exceptionRecord.setRelatedAudit(finding.getAudit());
+            exceptionRecord.setRelatedFinding(finding);
+            exceptionRecord.setExceptionName(finding.getTitle());
+            exceptionRecord.setDescription(firstNonBlank(finding.getRecommendation(), finding.getDescription()));
+            exceptionRecord.setJustification(firstNonBlank(finding.getRecommendation(), finding.getDescription()));
+            exceptionRecord.setApprovedBy("Security Team");
+            exceptionRecord.setApprovalDate(LocalDate.now());
+            exceptionRecord.setExpiryDate(LocalDate.now().plusDays(90));
+            exceptionRecord.setStatus(AuditExceptionStatus.ACTIVE);
+            auditExceptionRepository.save(exceptionRecord);
+        }
+    }
+
     private void createFindingIfMissing(Audit audit, FindingSeed seed, int offset) {
         boolean exists = findingRepository.findAll().stream().anyMatch(existing -> existing.getAudit() != null
                 && existing.getAudit().getId() != null
@@ -264,16 +297,16 @@ public class DataInitializer implements CommandLineRunner {
                 .collect(Collectors.toMap(this::auditKey, audit -> audit, (left, right) -> left, LinkedHashMap::new));
 
         List<ExceptionSeed> exceptionSeeds = List.of(
-                new ExceptionSeed("colombo hq", 1, "Legacy Access Exception", "Temporary approval for a legacy remote access path during migration.", "CISO Office", LocalDate.parse("2025-01-20"), LocalDate.parse("2025-04-20")),
-                new ExceptionSeed("colombo hq", 2, "Admin Service Exception", "Approval to retain a vendor maintenance account until cutover completes.", "Infrastructure Manager", LocalDate.parse("2025-05-25"), LocalDate.parse("2025-08-25")),
-                new ExceptionSeed("kandy branch", 2, "VPN Exception", "Site requires a temporary VPN exception until network redesign is complete.", "Security Lead", LocalDate.parse("2025-08-08"), LocalDate.parse("2025-11-08")),
-                new ExceptionSeed("galle branch", 3, "Monitoring Delay Exception", "Logging rollout delayed due to storage upgrade dependency.", "SOC Manager", LocalDate.parse("2026-04-05"), LocalDate.parse("2026-06-30")),
-                new ExceptionSeed("jaffna branch", 1, "Patch Window Exception", "Firmware patch deferred to avoid peak business hours disruption.", "Operations Head", LocalDate.parse("2025-03-31"), LocalDate.parse("2025-06-30")),
-                new ExceptionSeed("kurunegala dc", 2, "Certificate Renewal Exception", "Certificate renewal depends on external CA timeline.", "Platform Owner", LocalDate.parse("2025-11-16"), LocalDate.parse("2026-02-16")),
-                new ExceptionSeed("negombo pop", 1, "SNMP Exception", "Temporary acceptance of SNMPv2 until monitoring tooling is upgraded.", "Network Manager", LocalDate.parse("2025-05-10"), LocalDate.parse("2025-08-10")),
-                new ExceptionSeed("matara edge", 2, "Logging Exception", "Edge firewall logging retained in local buffer pending SIEM integration.", "SOC Manager", LocalDate.parse("2026-01-22"), LocalDate.parse("2026-04-22")),
-                new ExceptionSeed("batticaloa office", 1, "Firewall Rule Exception", "A business-critical inbound rule requires temporary approval.", "Regional IT Lead", LocalDate.parse("2025-07-18"), LocalDate.parse("2025-10-18")),
-                new ExceptionSeed("batticaloa office", 2, "Backup Exception", "Backup retention temporarily reduced to fit current storage capacity.", "Operations Head", LocalDate.parse("2026-03-02"), LocalDate.parse("2026-06-02"))
+                new ExceptionSeed("colombo hq", 1, "Legacy TLS Support Approved Until Migration", "Temporary approval for legacy remote access during migration.", "CISO Office", LocalDate.parse("2025-01-20"), LocalDate.parse("2025-04-20"), AuditExceptionStatus.CLOSED),
+                new ExceptionSeed("colombo hq", 2, "Admin Service Exception", "Approval to retain a vendor maintenance account until cutover completes.", "Infrastructure Manager", LocalDate.parse("2025-05-25"), LocalDate.parse("2025-08-25"), AuditExceptionStatus.EXPIRED),
+                new ExceptionSeed("kandy branch", 2, "Legacy VPN Encryption Exception", "Site requires a temporary VPN exception until network redesign is complete.", "Security Lead", LocalDate.parse("2025-08-08"), LocalDate.parse("2025-11-08"), AuditExceptionStatus.ACTIVE),
+                new ExceptionSeed("galle branch", 3, "Delayed MFA Rollout Approval", "MFA rollout delayed due to operational dependency.", "SOC Manager", LocalDate.parse("2026-04-05"), LocalDate.parse("2026-06-30"), AuditExceptionStatus.ACTIVE),
+                new ExceptionSeed("jaffna branch", 1, "Unsupported Firewall Firmware Temporarily Accepted", "Firmware patch deferred to avoid peak business hours disruption.", "Operations Head", LocalDate.parse("2025-03-31"), LocalDate.parse("2025-06-30"), AuditExceptionStatus.EXPIRED),
+                new ExceptionSeed("kurunegala dc", 2, "Certificate Renewal Exception", "Certificate renewal depends on external CA timeline.", "Platform Owner", LocalDate.parse("2025-11-16"), LocalDate.parse("2026-02-16"), AuditExceptionStatus.ACTIVE),
+                new ExceptionSeed("negombo pop", 1, "Temporary Admin Account Exception", "Temporary acceptance of privileged account access until tooling is upgraded.", "Network Manager", LocalDate.parse("2025-05-10"), LocalDate.parse("2025-08-10"), AuditExceptionStatus.CLOSED),
+                new ExceptionSeed("matara edge", 2, "Logging Exception", "Edge firewall logging retained in local buffer pending SIEM integration.", "SOC Manager", LocalDate.parse("2026-01-22"), LocalDate.parse("2026-04-22"), AuditExceptionStatus.ACTIVE),
+                new ExceptionSeed("batticaloa office", 1, "Firewall Rule Exception", "A business-critical inbound rule requires temporary approval.", "Regional IT Lead", LocalDate.parse("2025-07-18"), LocalDate.parse("2025-10-18"), AuditExceptionStatus.EXPIRED),
+                new ExceptionSeed("batticaloa office", 2, "Backup Exception", "Backup retention temporarily reduced to fit current storage capacity.", "Operations Head", LocalDate.parse("2026-03-02"), LocalDate.parse("2026-06-02"), AuditExceptionStatus.ACTIVE)
         );
 
         for (ExceptionSeed seed : exceptionSeeds) {
@@ -290,14 +323,55 @@ public class DataInitializer implements CommandLineRunner {
             }
 
             AuditException exceptionRecord = new AuditException();
-            exceptionRecord.setAudit(audit);
-            exceptionRecord.setTitle(seed.title());
-            exceptionRecord.setReason(seed.reason());
+            exceptionRecord.setRelatedSite(audit.getSite());
+            exceptionRecord.setRelatedAudit(audit);
+            exceptionRecord.setExceptionName(seed.title());
+            exceptionRecord.setDescription(seed.reason());
+            exceptionRecord.setJustification(seed.reason());
             exceptionRecord.setApprovedBy(seed.approvedBy());
-            exceptionRecord.setApprovedDate(seed.approvedDate());
+            exceptionRecord.setApprovalDate(seed.approvedDate());
             exceptionRecord.setExpiryDate(seed.expiryDate());
+            exceptionRecord.setStatus(seed.status());
             auditExceptionRepository.save(exceptionRecord);
         }
+    }
+
+    private void normalizeAuditExceptions() {
+        for (AuditException exceptionRecord : auditExceptionRepository.findAll()) {
+            if (exceptionRecord.getRelatedAudit() != null && exceptionRecord.getRelatedSite() == null) {
+                exceptionRecord.setRelatedSite(exceptionRecord.getRelatedAudit().getSite());
+            }
+            if (exceptionRecord.getStatus() == null) {
+                if (exceptionRecord.getExpiryDate() != null && exceptionRecord.getExpiryDate().isBefore(LocalDate.now())) {
+                    exceptionRecord.setStatus(AuditExceptionStatus.EXPIRED);
+                } else {
+                    exceptionRecord.setStatus(AuditExceptionStatus.ACTIVE);
+                }
+            }
+            if (exceptionRecord.getDescription() == null) {
+                exceptionRecord.setDescription(exceptionRecord.getJustification());
+            }
+            if (exceptionRecord.getJustification() == null) {
+                exceptionRecord.setJustification(exceptionRecord.getReason());
+            }
+            if (exceptionRecord.getExceptionName() == null) {
+                exceptionRecord.setExceptionName(exceptionRecord.getTitle());
+            }
+            if (exceptionRecord.getApprovalDate() == null) {
+                exceptionRecord.setApprovalDate(exceptionRecord.getApprovedDate());
+            }
+            auditExceptionRepository.save(exceptionRecord);
+        }
+    }
+
+    private String firstNonBlank(String first, String second) {
+        if (first != null && !first.isBlank()) {
+            return first;
+        }
+        if (second != null && !second.isBlank()) {
+            return second;
+        }
+        return null;
     }
 
     private void refreshSiteSnapshots() {
@@ -348,6 +422,6 @@ public class DataInitializer implements CommandLineRunner {
     private record ReportSeed(String siteName, Integer round, String fileName, String version, LocalDate uploadDate, String uploadedBy) {
     }
 
-    private record ExceptionSeed(String siteName, Integer round, String title, String reason, String approvedBy, LocalDate approvedDate, LocalDate expiryDate) {
+    private record ExceptionSeed(String siteName, Integer round, String title, String reason, String approvedBy, LocalDate approvedDate, LocalDate expiryDate, AuditExceptionStatus status) {
     }
 }

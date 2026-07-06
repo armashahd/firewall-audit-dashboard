@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.time.LocalDate;
+import java.util.List;
+
 @Controller
 public class FindingController {
 
@@ -27,8 +30,19 @@ public class FindingController {
     }
 
     @GetMapping("/findings")
-    public String listFindings(Model model) {
-        model.addAttribute("findings", findingService.getAllFindings());
+    public String listFindings(@RequestParam(required = false) FindingStatus status,
+                               @RequestParam(required = false) Severity severity,
+                               @RequestParam(required = false) Boolean overdue,
+                               Model model) {
+        List<Finding> findings = findingService.getAllFindings().stream()
+                .filter(finding -> status == null || finding.getStatus() == status)
+                .filter(finding -> severity == null || finding.getSeverity() == severity)
+                .filter(finding -> overdue == null || !overdue || finding.getStatus() != null
+                        && finding.getStatus().isOpenOrInProgress()
+                        && finding.getDueDate() != null
+                        && finding.getDueDate().isBefore(LocalDate.now()))
+                .toList();
+        model.addAttribute("findings", findings);
         return "findings";
     }
 
@@ -121,12 +135,30 @@ public class FindingController {
             valid = false;
         }
 
+        boolean closedByDate = finding.getClosedDate() != null;
+        boolean effectiveClosed = finding.getStatus() == FindingStatus.CLOSED || closedByDate;
+
+        if (finding.getDueDate() != null && finding.getClosedDate() != null && finding.getDueDate().isAfter(finding.getClosedDate())) {
+            model.addAttribute("dueDateError", "Due date cannot be after closed date.");
+            valid = false;
+        }
+
+        if (finding.getStatus() != null && !effectiveClosed && finding.getStatus() != FindingStatus.ACCEPTED_RISK
+                && finding.getDueDate() == null) {
+            model.addAttribute("dueDateError", "Due date is required for open and in-progress findings.");
+            valid = false;
+        }
+
+        if (finding.getStatus() == FindingStatus.CLOSED && finding.getClosedDate() == null) {
+            finding.setClosedDate(java.time.LocalDate.now());
+        }
+
         if (!StringUtils.hasText(finding.getCategory())) {
             model.addAttribute("categoryError", "Category is required.");
             valid = false;
         }
 
-        if (!StringUtils.hasText(finding.getRecommendation())) {
+        if (finding.getStatus() != FindingStatus.ACCEPTED_RISK && !StringUtils.hasText(finding.getRecommendation())) {
             model.addAttribute("recommendationError", "Recommendation is required.");
             valid = false;
         }

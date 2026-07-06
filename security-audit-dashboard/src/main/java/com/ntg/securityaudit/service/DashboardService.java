@@ -1,15 +1,20 @@
 package com.ntg.securityaudit.service;
 
 import com.ntg.securityaudit.dto.DashboardDTO;
-import com.ntg.securityaudit.enums.FindingStatus;
-import com.ntg.securityaudit.enums.Severity;
+import com.ntg.securityaudit.dto.DashboardFilter;
 import com.ntg.securityaudit.entity.Audit;
+import com.ntg.securityaudit.entity.AuditException;
 import com.ntg.securityaudit.entity.Finding;
 import com.ntg.securityaudit.entity.Site;
+import com.ntg.securityaudit.enums.AuditExceptionStatus;
+import com.ntg.securityaudit.enums.FindingStatus;
+import com.ntg.securityaudit.enums.Severity;
+import com.ntg.securityaudit.repository.AuditExceptionRepository;
 import com.ntg.securityaudit.repository.AuditRepository;
 import com.ntg.securityaudit.repository.FindingRepository;
 import com.ntg.securityaudit.repository.SiteRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -20,89 +25,125 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 public class DashboardService {
 
     private static final DateTimeFormatter LABEL_FORMAT = DateTimeFormatter.ofPattern("dd MMM", Locale.ENGLISH);
-    private static final List<String> AUDIT_AREAS = List.of(
-            "Authentication",
-            "Firewall Configuration",
-            "Network Security",
-            "Logging & Monitoring",
-            "Patch Management",
-            "Backup & Recovery"
-    );
 
     private final SiteRepository siteRepository;
     private final AuditRepository auditRepository;
     private final FindingRepository findingRepository;
+    private final AuditExceptionRepository auditExceptionRepository;
     private final DatabaseRepairService databaseRepairService;
 
     public DashboardService(SiteRepository siteRepository,
                             AuditRepository auditRepository,
                             FindingRepository findingRepository,
+                            AuditExceptionRepository auditExceptionRepository,
                             DatabaseRepairService databaseRepairService) {
         this.siteRepository = siteRepository;
         this.auditRepository = auditRepository;
         this.findingRepository = findingRepository;
+        this.auditExceptionRepository = auditExceptionRepository;
         this.databaseRepairService = databaseRepairService;
     }
 
     public DashboardDTO getDashboardData() {
+        return getDashboardData(new DashboardFilter());
+    }
+
+    @Transactional
+    public DashboardDTO getDashboardData(DashboardFilter filter) {
         databaseRepairService.repairIfNeeded();
+        normalizeLiveStatuses();
+
         DashboardDTO dto = new DashboardDTO();
+        DashboardFilter safeFilter = filter != null ? filter : new DashboardFilter();
 
-        List<Site> sites = siteRepository.findAll();
-        List<Audit> audits = auditRepository.findAll();
-        List<Finding> findings = findingRepository.findAll();
+        List<Site> allSites = siteRepository.findAll();
+        List<Audit> allAudits = auditRepository.findAll();
+        List<Finding> allFindings = findingRepository.findAll();
+        List<AuditException> allExceptions = auditExceptionRepository.findAll();
 
-        long totalSites = sites.size();
-        long totalAudits = audits.size();
+        dto.setCategoryOptions(allFindings.stream()
+                .map(this::normalizeCategory)
+                .filter(category -> !"Uncategorised".equals(category))
+                .distinct()
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList());
+        dto.setAuditRoundOptions(allAudits.stream()
+                .map(Audit::getAuditRound)
+                .filter(Objects::nonNull)
+                .distinct()
+                .sorted()
+                .toList());
+        dto.setYearOptions(allAudits.stream()
+                .map(Audit::getAuditDate)
+                .filter(Objects::nonNull)
+                .map(LocalDate::getYear)
+                .distinct()
+                .sorted(Comparator.reverseOrder())
+                .toList());
+
+        List<Audit> audits = allAudits.stream()
+                .filter(audit -> matchesAuditFilter(audit, safeFilter))
+                .toList();
+        Set<Long> auditIds = audits.stream()
+                .map(Audit::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        List<Site> sites = allSites.stream()
+                .filter(site -> safeFilter.getSiteId() == null || safeFilter.getSiteId().equals(site.getId()))
+                .toList();
+        List<Finding> findings = allFindings.stream()
+                .filter(finding -> finding.getAudit() != null && finding.getAudit().getId() != null && auditIds.contains(finding.getAudit().getId()))
+                .filter(finding -> matchesFindingFilter(finding, safeFilter))
+                .toList();
+        List<AuditException> exceptions = allExceptions.stream()
+                .filter(exception -> matchesExceptionFilter(exception, auditIds, safeFilter))
+                .toList();
+
         long totalFindings = findings.size();
-
-        long openFindings = findings.stream()
-                .filter(finding -> finding.getStatus() == FindingStatus.OPEN
-                        || finding.getStatus() == FindingStatus.IN_PROGRESS
-                        || finding.getStatus() == FindingStatus.ACCEPTED_RISK)
-                .count();
-
-        long closedFindings = findings.stream()
-                .filter(finding -> finding.getStatus() == FindingStatus.CLOSED)
-                .count();
-
+        long openFindings = findings.stream().filter(this::isOpenOrInProgress).count();
+        long closedFindings = findings.stream().filter(finding -> finding.getStatus() != null && finding.getStatus().isClosed()).count();
+        long acceptedRiskFindings = findings.stream().filter(finding -> finding.getStatus() != null && finding.getStatus().isAcceptedRisk()).count();
+        long overdueFindings = findings.stream().filter(this::isOverdue).count();
         long criticalFindings = countFindingsBySeverity(findings, Severity.CRITICAL);
         long highFindings = countFindingsBySeverity(findings, Severity.HIGH);
         long mediumFindings = countFindingsBySeverity(findings, Severity.MEDIUM);
         long lowFindings = countFindingsBySeverity(findings, Severity.LOW);
 
-        Double averageSiteScore = sites.stream()
+        double averageSiteScore = sites.stream()
                 .map(Site::getSecurityScore)
                 .filter(Objects::nonNull)
                 .mapToInt(Integer::intValue)
                 .average()
                 .orElse(0);
-
-        Double averageAuditScore = audits.stream()
+        double averageAuditScore = audits.stream()
                 .map(Audit::getOverallScore)
                 .filter(Objects::nonNull)
                 .mapToInt(Integer::intValue)
                 .average()
                 .orElse(0);
-
-        double overallSecurityScoreValue = averageSiteScore > 0 ? averageSiteScore : averageAuditScore;
-        int overallSecurityScore = (int) Math.round(overallSecurityScoreValue);
+        int overallSecurityScore = (int) Math.round(averageAuditScore > 0 ? averageAuditScore : averageSiteScore);
+        int completionPercentage = (int) Math.round(averageAuditCompletionPercentage(audits));
 
         dto.setOverallSecurityScore(overallSecurityScore);
-        dto.setCurrentRiskLevel(resolveCurrentRiskLevel(overallSecurityScore, criticalFindings, highFindings, mediumFindings));
-        dto.setTotalSites(totalSites);
-        dto.setTotalAudits(totalAudits);
+        dto.setCurrentRiskLevel(resolveCurrentRiskLevel(findings, overallSecurityScore));
+        dto.setTotalSites((long) sites.size());
+        dto.setTotalAudits((long) audits.size());
         dto.setTotalFindings(totalFindings);
         dto.setOpenFindings(openFindings);
         dto.setClosedFindings(closedFindings);
+        dto.setAcceptedRiskFindings(acceptedRiskFindings);
+        dto.setOverdueFindings(overdueFindings);
         dto.setCompletedImprovements(closedFindings);
         dto.setImprovementCompletionPercentage(totalFindings == 0 ? 0 : (int) Math.round((closedFindings * 100.0) / totalFindings));
+        dto.setTotalActiveExceptions(countExceptionsByStatus(exceptions, AuditExceptionStatus.ACTIVE));
+        dto.setTotalExpiredExceptions(countExceptionsByStatus(exceptions, AuditExceptionStatus.EXPIRED));
         dto.setNextScheduledAudit(calculateNextScheduledAudit(audits));
         dto.setAverageSiteScore((int) Math.round(averageSiteScore));
         dto.setAverageAuditScore((int) Math.round(averageAuditScore));
@@ -110,8 +151,72 @@ public class DashboardService {
         dto.setHighFindings(highFindings);
         dto.setMediumFindings(mediumFindings);
         dto.setLowFindings(lowFindings);
-        dto.setCompletionPercentage((int) Math.round(averageAuditCompletionPercentage(audits)));
+        dto.setCompletionPercentage(completionPercentage);
 
+        buildTrends(dto, audits, allFindings);
+        buildCharts(dto, audits, findings);
+        dto.setTopRisks(buildTopRisks(findings));
+        dto.setRecentAuditActivity(buildRecentAuditActivity(audits));
+        dto.setUpcomingActionPlans(buildUpcomingActionPlans(findings, audits));
+        dto.setUpcomingExceptionExpiries(buildUpcomingExceptionExpiries(exceptions));
+        dto.setSiteHeatmap(buildSiteHeatmap(sites, audits, findings));
+        dto.setActivityFeed(buildActivityFeed(audits, findings, exceptions));
+
+        return dto;
+    }
+
+    private void normalizeLiveStatuses() {
+        LocalDate today = LocalDate.now();
+        List<Finding> changedFindings = findingRepository.findAll().stream()
+                .filter(finding -> finding.getClosedDate() != null && finding.getStatus() != FindingStatus.CLOSED)
+                .peek(finding -> finding.setStatus(FindingStatus.CLOSED))
+                .toList();
+        if (!changedFindings.isEmpty()) {
+            findingRepository.saveAll(changedFindings);
+        }
+
+        List<AuditException> changedExceptions = auditExceptionRepository.findAll().stream()
+                .filter(exception -> exception.getStatus() != AuditExceptionStatus.CLOSED)
+                .filter(exception -> exception.getExpiryDate() != null)
+                .filter(exception -> effectiveExceptionStatus(exception) != exception.getStatus())
+                .peek(exception -> exception.setStatus(effectiveExceptionStatus(exception)))
+                .toList();
+        if (!changedExceptions.isEmpty()) {
+            auditExceptionRepository.saveAll(changedExceptions);
+        }
+    }
+
+    private boolean matchesAuditFilter(Audit audit, DashboardFilter filter) {
+        if (filter.getSiteId() != null && (audit.getSite() == null || !filter.getSiteId().equals(audit.getSite().getId()))) {
+            return false;
+        }
+        if (filter.getAuditRound() != null && !filter.getAuditRound().equals(audit.getAuditRound())) {
+            return false;
+        }
+        return filter.getYear() == null || audit.getAuditDate() != null && filter.getYear().equals(audit.getAuditDate().getYear());
+    }
+
+    private boolean matchesFindingFilter(Finding finding, DashboardFilter filter) {
+        if (filter.getCategory() != null && !filter.getCategory().isBlank() && !filter.getCategory().equalsIgnoreCase(normalizeCategory(finding))) {
+            return false;
+        }
+        if (filter.getSeverity() != null && finding.getSeverity() != filter.getSeverity()) {
+            return false;
+        }
+        return filter.getStatus() == null || finding.getStatus() == filter.getStatus();
+    }
+
+    private boolean matchesExceptionFilter(AuditException exception, Set<Long> auditIds, DashboardFilter filter) {
+        if (exception.getRelatedAudit() != null && exception.getRelatedAudit().getId() != null && !auditIds.contains(exception.getRelatedAudit().getId())) {
+            return false;
+        }
+        if (filter.getSiteId() != null && (exception.getRelatedSite() == null || !filter.getSiteId().equals(exception.getRelatedSite().getId()))) {
+            return false;
+        }
+        return filter.getYear() == null || exception.getApprovalDate() != null && filter.getYear().equals(exception.getApprovalDate().getYear());
+    }
+
+    private void buildCharts(DashboardDTO dto, List<Audit> audits, List<Finding> findings) {
         List<Audit> auditsSortedByDate = audits.stream()
                 .filter(audit -> audit.getAuditDate() != null)
                 .sorted(Comparator.comparing(Audit::getAuditDate)
@@ -119,18 +224,10 @@ public class DashboardService {
                         .thenComparing(audit -> audit.getId() != null ? audit.getId() : 0L))
                 .toList();
 
-        dto.setSecurityScoreTrendLabels(auditsSortedByDate.stream()
-                .map(this::formatAuditLabel)
-                .toList());
-        dto.setSecurityScoreTrendData(auditsSortedByDate.stream()
-                .map(audit -> audit.getOverallScore() == null ? 0 : audit.getOverallScore())
-                .toList());
-        dto.setAuditProgressLabels(auditsSortedByDate.stream()
-                .map(this::formatAuditLabel)
-                .toList());
-        dto.setAuditProgressData(auditsSortedByDate.stream()
-                .map(audit -> audit.getCompletionPercentage() == null ? 0 : audit.getCompletionPercentage())
-                .toList());
+        dto.setSecurityScoreTrendLabels(auditsSortedByDate.stream().map(this::formatAuditLabel).toList());
+        dto.setSecurityScoreTrendData(auditsSortedByDate.stream().map(audit -> audit.getOverallScore() == null ? 0 : audit.getOverallScore()).toList());
+        dto.setAuditProgressLabels(auditsSortedByDate.stream().map(this::formatAuditLabel).toList());
+        dto.setAuditProgressData(auditsSortedByDate.stream().map(audit -> audit.getCompletionPercentage() == null ? 0 : audit.getCompletionPercentage()).toList());
 
         Map<String, Long> severityCounts = new LinkedHashMap<>();
         severityCounts.put("Critical", countFindingsBySeverity(findings, Severity.CRITICAL));
@@ -140,17 +237,12 @@ public class DashboardService {
         dto.setFindingsSeverityLabels(new ArrayList<>(severityCounts.keySet()));
         dto.setFindingsSeverityData(new ArrayList<>(severityCounts.values()));
 
-        Map<String, Long> statusCounts = new LinkedHashMap<>();
-        statusCounts.put("Open / In Progress", findings.stream()
-                .filter(finding -> finding.getStatus() == FindingStatus.OPEN
-                        || finding.getStatus() == FindingStatus.IN_PROGRESS
-                        || finding.getStatus() == FindingStatus.ACCEPTED_RISK)
-                .count());
-        statusCounts.put("Closed", findings.stream()
-                .filter(finding -> finding.getStatus() == FindingStatus.CLOSED)
-                .count());
-        dto.setOpenClosedLabels(new ArrayList<>(statusCounts.keySet()));
-        dto.setOpenClosedData(new ArrayList<>(statusCounts.values()));
+        dto.setOpenClosedLabels(List.of("Open / In Progress", "Closed", "Accepted Risk"));
+        dto.setOpenClosedData(List.of(
+                findings.stream().filter(this::isOpenOrInProgress).count(),
+                findings.stream().filter(finding -> finding.getStatus() != null && finding.getStatus().isClosed()).count(),
+                findings.stream().filter(finding -> finding.getStatus() != null && finding.getStatus().isAcceptedRisk()).count()
+        ));
 
         Map<String, Long> categoryCounts = findings.stream()
                 .collect(Collectors.groupingBy(this::normalizeCategory, Collectors.counting()));
@@ -160,32 +252,162 @@ public class DashboardService {
         dto.setRiskDistributionLabels(new ArrayList<>(sortedCategoryCounts.keySet()));
         dto.setRiskDistributionData(new ArrayList<>(sortedCategoryCounts.values()));
 
-        dto.setAuditAreaLabels(new ArrayList<>(AUDIT_AREAS));
-        dto.setAuditAreaData(AUDIT_AREAS.stream()
+        dto.setAuditAreaLabels(new ArrayList<>(sortedCategoryCounts.keySet()));
+        dto.setAuditAreaData(sortedCategoryCounts.keySet().stream()
                 .map(category -> calculateAuditAreaScore(findings, category))
                 .toList());
+    }
 
-        dto.setTopRisks(buildTopRisks(findings));
-        dto.setRecentAuditActivity(buildRecentAuditActivity(audits));
-        dto.setUpcomingActionPlans(buildUpcomingActionPlans(findings, audits));
+    private void buildTrends(DashboardDTO dto, List<Audit> audits, List<Finding> allFindings) {
+        List<Audit> sorted = audits.stream()
+                .sorted(Comparator.comparing(Audit::getAuditDate, Comparator.nullsLast(Comparator.naturalOrder()))
+                        .thenComparing(audit -> audit.getAuditRound() != null ? audit.getAuditRound() : 0)
+                        .thenComparing(audit -> audit.getId() != null ? audit.getId() : 0L))
+                .toList();
+        if (sorted.size() < 2) {
+            setFlatTrends(dto);
+            return;
+        }
 
-        return dto;
+        Audit previous = sorted.get(sorted.size() - 2);
+        Audit current = sorted.get(sorted.size() - 1);
+        List<Finding> currentFindings = findingsForAudit(allFindings, current);
+        List<Finding> previousFindings = findingsForAudit(allFindings, previous);
+
+        int currentScore = current.getOverallScore() == null ? 0 : current.getOverallScore();
+        int previousScore = previous.getOverallScore() == null ? 0 : previous.getOverallScore();
+        int currentCompletion = current.getCompletionPercentage() == null ? 0 : current.getCompletionPercentage();
+        int previousCompletion = previous.getCompletionPercentage() == null ? 0 : previous.getCompletionPercentage();
+
+        setTrend(dto::setScoreTrendLabel, dto::setScoreTrendClass, currentScore - previousScore, true, "% since previous audit");
+        setTrend(dto::setOpenFindingsTrendLabel, dto::setOpenFindingsTrendClass,
+                (int) (currentFindings.stream().filter(this::isOpenOrInProgress).count() - previousFindings.stream().filter(this::isOpenOrInProgress).count()),
+                false, " since previous audit");
+        setTrend(dto::setClosedFindingsTrendLabel, dto::setClosedFindingsTrendClass,
+                (int) (currentFindings.stream().filter(finding -> finding.getStatus() != null && finding.getStatus().isClosed()).count()
+                        - previousFindings.stream().filter(finding -> finding.getStatus() != null && finding.getStatus().isClosed()).count()),
+                true, " since previous audit");
+        setTrend(dto::setCompletionTrendLabel, dto::setCompletionTrendClass, currentCompletion - previousCompletion, true, "% since previous audit");
+    }
+
+    private void setFlatTrends(DashboardDTO dto) {
+        dto.setScoreTrendLabel("No previous audit");
+        dto.setScoreTrendClass("text-muted");
+        dto.setOpenFindingsTrendLabel("No previous audit");
+        dto.setOpenFindingsTrendClass("text-muted");
+        dto.setClosedFindingsTrendLabel("No previous audit");
+        dto.setClosedFindingsTrendClass("text-muted");
+        dto.setCompletionTrendLabel("No previous audit");
+        dto.setCompletionTrendClass("text-muted");
+    }
+
+    private void setTrend(java.util.function.Consumer<String> labelSetter,
+                          java.util.function.Consumer<String> classSetter,
+                          int delta,
+                          boolean higherIsBetter,
+                          String suffix) {
+        if (delta == 0) {
+            labelSetter.accept("no change");
+            classSetter.accept("text-muted");
+            return;
+        }
+        boolean improved = higherIsBetter ? delta > 0 : delta < 0;
+        labelSetter.accept((improved ? "up " : "down ") + (delta > 0 ? "+" : "") + delta + suffix);
+        classSetter.accept(improved ? "text-success" : "text-danger");
+    }
+
+    private List<Finding> findingsForAudit(List<Finding> findings, Audit audit) {
+        return findings.stream()
+                .filter(finding -> finding.getAudit() != null && audit.getId() != null && audit.getId().equals(finding.getAudit().getId()))
+                .toList();
+    }
+
+    private List<DashboardDTO.SiteHeatmapItem> buildSiteHeatmap(List<Site> sites, List<Audit> audits, List<Finding> findings) {
+        return sites.stream()
+                .map(site -> {
+                    List<Audit> siteAudits = audits.stream()
+                            .filter(audit -> audit.getSite() != null && site.getId() != null && site.getId().equals(audit.getSite().getId()))
+                            .toList();
+                    Audit latestAudit = siteAudits.stream()
+                            .max(Comparator.comparing(Audit::getAuditDate, Comparator.nullsLast(Comparator.naturalOrder()))
+                                    .thenComparing(audit -> audit.getId() != null ? audit.getId() : 0L))
+                            .orElse(null);
+                    Set<Long> siteAuditIds = siteAudits.stream().map(Audit::getId).collect(Collectors.toSet());
+                    List<Finding> siteFindings = findings.stream()
+                            .filter(finding -> finding.getAudit() != null && siteAuditIds.contains(finding.getAudit().getId()))
+                            .toList();
+
+                    long open = siteFindings.stream().filter(this::isOpenOrInProgress).count();
+                    long critical = siteFindings.stream().filter(finding -> finding.getSeverity() == Severity.CRITICAL && isOpenOrInProgress(finding)).count();
+                    long overdue = siteFindings.stream().filter(this::isOverdue).count();
+                    int score = latestAudit != null && latestAudit.getOverallScore() != null ? latestAudit.getOverallScore() : 0;
+
+                    DashboardDTO.SiteHeatmapItem item = new DashboardDTO.SiteHeatmapItem();
+                    item.setSiteName(site.getName());
+                    item.setLatestAuditScore(score);
+                    item.setOpenFindings(open);
+                    item.setCriticalFindings(critical);
+                    item.setOverdueFindings(overdue);
+                    item.setRiskLevel(resolveCurrentRiskLevel(siteFindings, score));
+                    return item;
+                })
+                .toList();
+    }
+
+    private List<DashboardDTO.ActivityFeedItem> buildActivityFeed(List<Audit> audits, List<Finding> findings, List<AuditException> exceptions) {
+        List<DashboardDTO.ActivityFeedItem> items = new ArrayList<>();
+        audits.forEach(audit -> items.add(activity(audit.getAuditDate(), "Audit", "Audit completed for "
+                + (audit.getSite() != null ? audit.getSite().getName() : "site")
+                + (audit.getAuditRound() != null ? " round " + audit.getAuditRound() : ""), "bg-primary")));
+        findings.forEach(finding -> {
+            if (finding.getStatus() == FindingStatus.CLOSED) {
+                items.add(activity(finding.getClosedDate(), "Finding", "Finding closed: " + finding.getTitle(), "bg-success"));
+            } else if (finding.getStatus() == FindingStatus.ACCEPTED_RISK) {
+                items.add(activity(finding.getDueDate(), "Finding", "Finding accepted as risk: " + finding.getTitle(), "bg-secondary"));
+            } else {
+                items.add(activity(finding.getDueDate(), "Finding", "Finding created/open: " + finding.getTitle(), "bg-danger"));
+            }
+        });
+        exceptions.forEach(exception -> items.add(activity(exception.getExpiryDate(), "Exception",
+                effectiveExceptionStatus(exception) == AuditExceptionStatus.EXPIRED
+                        ? "Exception expired: " + exception.getExceptionName()
+                        : "Exception active: " + exception.getExceptionName(),
+                effectiveExceptionStatus(exception) == AuditExceptionStatus.EXPIRED ? "bg-warning text-dark" : "bg-success")));
+
+        return items.stream()
+                .sorted(Comparator.comparing(DashboardDTO.ActivityFeedItem::getActivityDate, Comparator.nullsLast(Comparator.naturalOrder())).reversed())
+                .limit(10)
+                .toList();
+    }
+
+    private DashboardDTO.ActivityFeedItem activity(LocalDate date, String type, String message, String badgeClass) {
+        DashboardDTO.ActivityFeedItem item = new DashboardDTO.ActivityFeedItem();
+        item.setActivityDate(date);
+        item.setType(type);
+        item.setMessage(message);
+        item.setBadgeClass(badgeClass);
+        return item;
+    }
+
+    private long countExceptionsByStatus(List<AuditException> exceptions, AuditExceptionStatus status) {
+        return exceptions.stream().filter(exception -> effectiveExceptionStatus(exception) == status).count();
     }
 
     private long countFindingsBySeverity(List<Finding> findings, Severity severity) {
-        return findings.stream()
-                .filter(finding -> finding.getSeverity() == severity)
-                .count();
+        return findings.stream().filter(finding -> finding.getSeverity() == severity).count();
     }
 
-    private String resolveCurrentRiskLevel(int overallSecurityScore, long criticalFindings, long highFindings, long mediumFindings) {
-        if (overallSecurityScore < 40 || criticalFindings > 0) {
+    private String resolveCurrentRiskLevel(List<Finding> findings, int averageSecurityScore) {
+        if (findings.stream().anyMatch(finding -> finding.getSeverity() == Severity.CRITICAL && isOpenOrInProgress(finding))) {
             return "Critical";
         }
-        if (overallSecurityScore < 60 || highFindings >= 6) {
+        if (findings.stream().anyMatch(finding -> finding.getSeverity() == Severity.HIGH && isOverdue(finding))) {
             return "High";
         }
-        if (overallSecurityScore < 80 || mediumFindings >= 10) {
+        if (averageSecurityScore < 70) {
+            return "High";
+        }
+        if (findings.stream().anyMatch(finding -> finding.getSeverity() == Severity.MEDIUM && isOpenOrInProgress(finding))) {
             return "Medium";
         }
         return "Low";
@@ -213,9 +435,7 @@ public class DashboardService {
     }
 
     private String formatAuditLabel(Audit audit) {
-        String siteName = audit.getSite() != null && audit.getSite().getName() != null
-                ? audit.getSite().getName()
-                : "Audit";
+        String siteName = audit.getSite() != null && audit.getSite().getName() != null ? audit.getSite().getName() : "Audit";
         String roundLabel = audit.getAuditRound() != null ? " R" + audit.getAuditRound() : "";
         String dateLabel = audit.getAuditDate() != null ? " " + audit.getAuditDate().format(LABEL_FORMAT) : "";
         return siteName + roundLabel + dateLabel;
@@ -229,48 +449,24 @@ public class DashboardService {
     }
 
     private int calculateAuditAreaScore(List<Finding> findings, String category) {
-        long critical = findings.stream()
-                .filter(finding -> category.equalsIgnoreCase(normalizeCategory(finding)))
-                .filter(finding -> finding.getSeverity() == Severity.CRITICAL)
-                .count();
-        long high = findings.stream()
-                .filter(finding -> category.equalsIgnoreCase(normalizeCategory(finding)))
-                .filter(finding -> finding.getSeverity() == Severity.HIGH)
-                .count();
-        long medium = findings.stream()
-                .filter(finding -> category.equalsIgnoreCase(normalizeCategory(finding)))
-                .filter(finding -> finding.getSeverity() == Severity.MEDIUM)
-                .count();
-        long low = findings.stream()
-                .filter(finding -> category.equalsIgnoreCase(normalizeCategory(finding)))
-                .filter(finding -> finding.getSeverity() == Severity.LOW)
-                .count();
-
-        int score = 100;
-        score -= critical * 22;
-        score -= high * 14;
-        score -= medium * 8;
-        score -= low * 4;
-        return Math.max(0, score);
+        long critical = findings.stream().filter(finding -> category.equalsIgnoreCase(normalizeCategory(finding))).filter(finding -> finding.getSeverity() == Severity.CRITICAL).count();
+        long high = findings.stream().filter(finding -> category.equalsIgnoreCase(normalizeCategory(finding))).filter(finding -> finding.getSeverity() == Severity.HIGH).count();
+        long medium = findings.stream().filter(finding -> category.equalsIgnoreCase(normalizeCategory(finding))).filter(finding -> finding.getSeverity() == Severity.MEDIUM).count();
+        long low = findings.stream().filter(finding -> category.equalsIgnoreCase(normalizeCategory(finding))).filter(finding -> finding.getSeverity() == Severity.LOW).count();
+        return Math.max(0, 100 - (int) critical * 22 - (int) high * 14 - (int) medium * 8 - (int) low * 4);
     }
 
     private List<DashboardDTO.RiskItem> buildTopRisks(List<Finding> findings) {
         Map<String, List<Finding>> groupedFindings = findings.stream()
-                .collect(Collectors.groupingBy(finding -> {
-                    String title = finding.getTitle();
-                    return title == null || title.isBlank() ? "Unnamed Risk" : title.trim();
-                }, LinkedHashMap::new, Collectors.toList()));
+                .collect(Collectors.groupingBy(finding -> finding.getTitle() == null || finding.getTitle().isBlank() ? "Unnamed Risk" : finding.getTitle().trim(),
+                        LinkedHashMap::new, Collectors.toList()));
 
         return groupedFindings.entrySet().stream()
                 .map(entry -> {
                     DashboardDTO.RiskItem item = new DashboardDTO.RiskItem();
                     item.setTitle(entry.getKey());
                     item.setCount((long) entry.getValue().size());
-                    item.setCategory(entry.getValue().stream()
-                            .map(this::normalizeCategory)
-                            .filter(Objects::nonNull)
-                            .findFirst()
-                            .orElse("Uncategorised"));
+                    item.setCategory(entry.getValue().stream().map(this::normalizeCategory).findFirst().orElse("Uncategorised"));
                     item.setSeverity(entry.getValue().stream()
                             .map(Finding::getSeverity)
                             .filter(Objects::nonNull)
@@ -283,26 +479,6 @@ public class DashboardService {
                         .thenComparing(item -> severityRank(item.getSeverity()), Comparator.reverseOrder()))
                 .limit(5)
                 .toList();
-    }
-
-    private int severityRank(Severity severity) {
-        if (severity == null) {
-            return 0;
-        }
-        return severityRank(severity.name());
-    }
-
-    private int severityRank(String severity) {
-        if (severity == null) {
-            return 0;
-        }
-        return switch (severity.toUpperCase(Locale.ENGLISH)) {
-            case "CRITICAL" -> 4;
-            case "HIGH" -> 3;
-            case "MEDIUM" -> 2;
-            case "LOW" -> 1;
-            default -> 0;
-        };
     }
 
     private List<DashboardDTO.AuditActivityItem> buildRecentAuditActivity(List<Audit> audits) {
@@ -332,7 +508,7 @@ public class DashboardService {
                 .collect(Collectors.toMap(Audit::getId, audit -> audit, (left, right) -> left, LinkedHashMap::new));
 
         return findings.stream()
-                .filter(finding -> finding.getStatus() != FindingStatus.CLOSED)
+                .filter(this::isOpenOrInProgress)
                 .sorted(Comparator.comparing(Finding::getDueDate, Comparator.nullsLast(Comparator.naturalOrder()))
                         .thenComparing(finding -> finding.getSeverity() != null ? severityRank(finding.getSeverity()) : 0, Comparator.reverseOrder())
                         .thenComparing(finding -> finding.getId() != null ? finding.getId() : 0L, Comparator.reverseOrder()))
@@ -345,13 +521,66 @@ public class DashboardService {
                     item.setOwner(finding.getAssignedTo());
                     item.setPriority(finding.getSeverity() != null ? finding.getSeverity().name() : "LOW");
                     item.setTargetDate(finding.getDueDate());
-                    item.setStatus(finding.getStatus() != null ? finding.getStatus().name().replace('_', ' ') : "OPEN");
+                    item.setStatus(finding.getStatus() != null ? finding.getStatus().getDisplayName() : "Open");
                     Audit linkedAudit = finding.getAudit() != null ? auditMap.get(finding.getAudit().getId()) : null;
-                    item.setNotes(linkedAudit != null && linkedAudit.getSite() != null
-                            ? linkedAudit.getSite().getName() + " / Audit #" + linkedAudit.getId()
-                            : finding.getCategory());
+                    item.setNotes(linkedAudit != null && linkedAudit.getSite() != null ? linkedAudit.getSite().getName() + " / Audit #" + linkedAudit.getId() : finding.getCategory());
                     return item;
                 })
                 .toList();
+    }
+
+    private List<DashboardDTO.ExceptionExpiryItem> buildUpcomingExceptionExpiries(List<AuditException> exceptions) {
+        return exceptions.stream()
+                .filter(exception -> effectiveExceptionStatus(exception) != AuditExceptionStatus.CLOSED)
+                .filter(exception -> exception.getExpiryDate() != null)
+                .filter(exception -> !exception.getExpiryDate().isBefore(LocalDate.now()))
+                .sorted(Comparator.comparing(AuditException::getExpiryDate).thenComparing(exception -> exception.getId() != null ? exception.getId() : 0L))
+                .limit(5)
+                .map(exception -> {
+                    DashboardDTO.ExceptionExpiryItem item = new DashboardDTO.ExceptionExpiryItem();
+                    item.setExceptionId(exception.getId());
+                    item.setExceptionName(exception.getExceptionName() != null ? exception.getExceptionName() : "-");
+                    item.setSiteName(exception.getRelatedSite() != null ? exception.getRelatedSite().getName() : "-");
+                    item.setAuditLabel(exception.getRelatedAudit() != null ? "Audit #" + exception.getRelatedAudit().getId() : "-");
+                    item.setExpiryDate(exception.getExpiryDate());
+                    item.setStatus(effectiveExceptionStatus(exception).name());
+                    return item;
+                })
+                .toList();
+    }
+
+    private boolean isOpenOrInProgress(Finding finding) {
+        return finding.getStatus() != null && finding.getStatus().isOpenOrInProgress();
+    }
+
+    private boolean isOverdue(Finding finding) {
+        return isOpenOrInProgress(finding) && finding.getDueDate() != null && finding.getDueDate().isBefore(LocalDate.now());
+    }
+
+    private AuditExceptionStatus effectiveExceptionStatus(AuditException exception) {
+        if (exception.getStatus() == AuditExceptionStatus.CLOSED) {
+            return AuditExceptionStatus.CLOSED;
+        }
+        if (exception.getExpiryDate() != null && exception.getExpiryDate().isBefore(LocalDate.now())) {
+            return AuditExceptionStatus.EXPIRED;
+        }
+        return AuditExceptionStatus.ACTIVE;
+    }
+
+    private int severityRank(Severity severity) {
+        return severity == null ? 0 : severityRank(severity.name());
+    }
+
+    private int severityRank(String severity) {
+        if (severity == null) {
+            return 0;
+        }
+        return switch (severity.toUpperCase(Locale.ENGLISH)) {
+            case "CRITICAL" -> 4;
+            case "HIGH" -> 3;
+            case "MEDIUM" -> 2;
+            case "LOW" -> 1;
+            default -> 0;
+        };
     }
 }

@@ -13,8 +13,12 @@ public class DashboardDTO {
     private Long totalFindings;
     private Long openFindings;
     private Long closedFindings;
+    private Long acceptedRiskFindings;
+    private Long overdueFindings;
     private Long completedImprovements;
     private Integer improvementCompletionPercentage;
+    private Long totalActiveExceptions;
+    private Long totalExpiredExceptions;
     private LocalDate nextScheduledAudit;
     private Integer averageSiteScore;
     private Integer averageAuditScore;
@@ -23,6 +27,17 @@ public class DashboardDTO {
     private Long mediumFindings;
     private Long lowFindings;
     private Integer completionPercentage;
+    private String scoreTrendLabel;
+    private String scoreTrendClass;
+    private String openFindingsTrendLabel;
+    private String openFindingsTrendClass;
+    private String closedFindingsTrendLabel;
+    private String closedFindingsTrendClass;
+    private String completionTrendLabel;
+    private String completionTrendClass;
+    private List<String> categoryOptions = new ArrayList<>();
+    private List<Integer> auditRoundOptions = new ArrayList<>();
+    private List<Integer> yearOptions = new ArrayList<>();
     private List<String> securityScoreTrendLabels = new ArrayList<>();
     private List<Integer> securityScoreTrendData = new ArrayList<>();
     private List<String> riskDistributionLabels = new ArrayList<>();
@@ -38,6 +53,9 @@ public class DashboardDTO {
     private List<RiskItem> topRisks = new ArrayList<>();
     private List<AuditActivityItem> recentAuditActivity = new ArrayList<>();
     private List<ActionPlanItem> upcomingActionPlans = new ArrayList<>();
+    private List<ExceptionExpiryItem> upcomingExceptionExpiries = new ArrayList<>();
+    private List<SiteHeatmapItem> siteHeatmap = new ArrayList<>();
+    private List<ActivityFeedItem> activityFeed = new ArrayList<>();
 
     public DashboardDTO() {
     }
@@ -98,6 +116,22 @@ public class DashboardDTO {
         this.closedFindings = closedFindings;
     }
 
+    public Long getAcceptedRiskFindings() {
+        return acceptedRiskFindings;
+    }
+
+    public void setAcceptedRiskFindings(Long acceptedRiskFindings) {
+        this.acceptedRiskFindings = acceptedRiskFindings;
+    }
+
+    public Long getOverdueFindings() {
+        return overdueFindings;
+    }
+
+    public void setOverdueFindings(Long overdueFindings) {
+        this.overdueFindings = overdueFindings;
+    }
+
     public Long getCompletedImprovements() {
         return completedImprovements;
     }
@@ -112,6 +146,22 @@ public class DashboardDTO {
 
     public void setImprovementCompletionPercentage(Integer improvementCompletionPercentage) {
         this.improvementCompletionPercentage = improvementCompletionPercentage;
+    }
+
+    public Long getTotalActiveExceptions() {
+        return totalActiveExceptions;
+    }
+
+    public void setTotalActiveExceptions(Long totalActiveExceptions) {
+        this.totalActiveExceptions = totalActiveExceptions;
+    }
+
+    public Long getTotalExpiredExceptions() {
+        return totalExpiredExceptions;
+    }
+
+    public void setTotalExpiredExceptions(Long totalExpiredExceptions) {
+        this.totalExpiredExceptions = totalExpiredExceptions;
     }
 
     public LocalDate getNextScheduledAudit() {
@@ -176,6 +226,94 @@ public class DashboardDTO {
 
     public void setCompletionPercentage(Integer completionPercentage) {
         this.completionPercentage = completionPercentage;
+    }
+
+    public String getScoreTrendLabel() {
+        return scoreTrendLabel;
+    }
+
+    public void setScoreTrendLabel(String scoreTrendLabel) {
+        this.scoreTrendLabel = scoreTrendLabel;
+    }
+
+    public String getScoreTrendClass() {
+        return scoreTrendClass;
+    }
+
+    public void setScoreTrendClass(String scoreTrendClass) {
+        this.scoreTrendClass = scoreTrendClass;
+    }
+
+    public String getOpenFindingsTrendLabel() {
+        return openFindingsTrendLabel;
+    }
+
+    public void setOpenFindingsTrendLabel(String openFindingsTrendLabel) {
+        this.openFindingsTrendLabel = openFindingsTrendLabel;
+    }
+
+    public String getOpenFindingsTrendClass() {
+        return openFindingsTrendClass;
+    }
+
+    public void setOpenFindingsTrendClass(String openFindingsTrendClass) {
+        this.openFindingsTrendClass = openFindingsTrendClass;
+    }
+
+    public String getClosedFindingsTrendLabel() {
+        return closedFindingsTrendLabel;
+    }
+
+    public void setClosedFindingsTrendLabel(String closedFindingsTrendLabel) {
+        this.closedFindingsTrendLabel = closedFindingsTrendLabel;
+    }
+
+    public String getClosedFindingsTrendClass() {
+        return closedFindingsTrendClass;
+    }
+
+    public void setClosedFindingsTrendClass(String closedFindingsTrendClass) {
+        this.closedFindingsTrendClass = closedFindingsTrendClass;
+    }
+
+    public String getCompletionTrendLabel() {
+        return completionTrendLabel;
+    }
+
+    public void setCompletionTrendLabel(String completionTrendLabel) {
+        this.completionTrendLabel = completionTrendLabel;
+    }
+
+    public String getCompletionTrendClass() {
+        return completionTrendClass;
+    }
+
+    public void setCompletionTrendClass(String completionTrendClass) {
+        this.completionTrendClass = completionTrendClass;
+    }
+
+    public List<String> getCategoryOptions() {
+        return categoryOptions;
+    }
+
+    public void setCategoryOptions(List<String> categoryOptions) {
+        this.categoryOptions = categoryOptions;
+    }
+
+    public List<Integer> getAuditRoundOptions() {
+        return auditRoundOptions;
+    }
+
+    public void setAuditRoundOptions(List<Integer> auditRoundOptions) {
+        this.auditRoundOptions = auditRoundOptions;
+    }
+
+    public List<Integer> getYearOptions() {
+        return yearOptions;
+    }
+
+    public void setYearOptions(List<Integer> yearOptions) {
+        this.yearOptions = yearOptions;
     }
 
     public List<String> getSecurityScoreTrendLabels() {
@@ -296,6 +434,30 @@ public class DashboardDTO {
 
     public void setUpcomingActionPlans(List<ActionPlanItem> upcomingActionPlans) {
         this.upcomingActionPlans = upcomingActionPlans;
+    }
+
+    public List<ExceptionExpiryItem> getUpcomingExceptionExpiries() {
+        return upcomingExceptionExpiries;
+    }
+
+    public void setUpcomingExceptionExpiries(List<ExceptionExpiryItem> upcomingExceptionExpiries) {
+        this.upcomingExceptionExpiries = upcomingExceptionExpiries;
+    }
+
+    public List<SiteHeatmapItem> getSiteHeatmap() {
+        return siteHeatmap;
+    }
+
+    public void setSiteHeatmap(List<SiteHeatmapItem> siteHeatmap) {
+        this.siteHeatmap = siteHeatmap;
+    }
+
+    public List<ActivityFeedItem> getActivityFeed() {
+        return activityFeed;
+    }
+
+    public void setActivityFeed(List<ActivityFeedItem> activityFeed) {
+        this.activityFeed = activityFeed;
     }
 
     public static class RiskItem {
@@ -484,6 +646,162 @@ public class DashboardDTO {
 
         public void setNotes(String notes) {
             this.notes = notes;
+        }
+    }
+
+    public static class ExceptionExpiryItem {
+        private Long exceptionId;
+        private String exceptionName;
+        private String siteName;
+        private String auditLabel;
+        private LocalDate expiryDate;
+        private String status;
+
+        public ExceptionExpiryItem() {
+        }
+
+        public Long getExceptionId() {
+            return exceptionId;
+        }
+
+        public void setExceptionId(Long exceptionId) {
+            this.exceptionId = exceptionId;
+        }
+
+        public String getExceptionName() {
+            return exceptionName;
+        }
+
+        public void setExceptionName(String exceptionName) {
+            this.exceptionName = exceptionName;
+        }
+
+        public String getSiteName() {
+            return siteName;
+        }
+
+        public void setSiteName(String siteName) {
+            this.siteName = siteName;
+        }
+
+        public String getAuditLabel() {
+            return auditLabel;
+        }
+
+        public void setAuditLabel(String auditLabel) {
+            this.auditLabel = auditLabel;
+        }
+
+        public LocalDate getExpiryDate() {
+            return expiryDate;
+        }
+
+        public void setExpiryDate(LocalDate expiryDate) {
+            this.expiryDate = expiryDate;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+    }
+
+    public static class SiteHeatmapItem {
+        private String siteName;
+        private Integer latestAuditScore;
+        private Long openFindings;
+        private Long criticalFindings;
+        private Long overdueFindings;
+        private String riskLevel;
+
+        public String getSiteName() {
+            return siteName;
+        }
+
+        public void setSiteName(String siteName) {
+            this.siteName = siteName;
+        }
+
+        public Integer getLatestAuditScore() {
+            return latestAuditScore;
+        }
+
+        public void setLatestAuditScore(Integer latestAuditScore) {
+            this.latestAuditScore = latestAuditScore;
+        }
+
+        public Long getOpenFindings() {
+            return openFindings;
+        }
+
+        public void setOpenFindings(Long openFindings) {
+            this.openFindings = openFindings;
+        }
+
+        public Long getCriticalFindings() {
+            return criticalFindings;
+        }
+
+        public void setCriticalFindings(Long criticalFindings) {
+            this.criticalFindings = criticalFindings;
+        }
+
+        public Long getOverdueFindings() {
+            return overdueFindings;
+        }
+
+        public void setOverdueFindings(Long overdueFindings) {
+            this.overdueFindings = overdueFindings;
+        }
+
+        public String getRiskLevel() {
+            return riskLevel;
+        }
+
+        public void setRiskLevel(String riskLevel) {
+            this.riskLevel = riskLevel;
+        }
+    }
+
+    public static class ActivityFeedItem {
+        private LocalDate activityDate;
+        private String type;
+        private String message;
+        private String badgeClass;
+
+        public LocalDate getActivityDate() {
+            return activityDate;
+        }
+
+        public void setActivityDate(LocalDate activityDate) {
+            this.activityDate = activityDate;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
+        }
+
+        public String getBadgeClass() {
+            return badgeClass;
+        }
+
+        public void setBadgeClass(String badgeClass) {
+            this.badgeClass = badgeClass;
         }
     }
 }
