@@ -400,7 +400,7 @@ public class DataInitializer implements CommandLineRunner {
                 continue;
             }
 
-            Audit latestAudit = siteAudits.getFirst();
+            Audit latestAudit = siteAudits.get(0);
             site.setLastAuditDate(latestAudit.getAuditDate());
             site.setSecurityScore(latestAudit.getOverallScore());
             if (latestAudit.getOverallScore() != null && latestAudit.getOverallScore() >= 85) {
