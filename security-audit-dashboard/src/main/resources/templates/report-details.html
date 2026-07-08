@@ -19,8 +19,8 @@
             <div class="toolbar-group">
                 <a th:href="@{/reports}" class="btn btn-outline-secondary">Back</a>
                 <a th:href="@{/reports/{id}/download(id=${report.id})}" class="btn btn-outline-success">Download Original</a>
-                <a th:href="@{/reports/edit/{id}(id=${report.id})}" class="btn btn-outline-primary">Edit</a>
-                <form th:action="@{/reports/{id}/delete(id=${report.id})}" method="post" onsubmit="return confirm('Delete this report permanently?');">
+                <a th:if="${canManageAll}" th:href="@{/reports/edit/{id}(id=${report.id})}" class="btn btn-outline-primary">Edit</a>
+                <form th:if="${canManageAll}" th:action="@{/reports/{id}/delete(id=${report.id})}" method="post" onsubmit="return confirm('Delete this report permanently?');">
                     <button type="submit" class="btn btn-outline-danger">Delete</button>
                 </form>
             </div>

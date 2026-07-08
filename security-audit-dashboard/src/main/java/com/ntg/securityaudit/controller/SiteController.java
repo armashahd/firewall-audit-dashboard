@@ -3,6 +3,7 @@ package com.ntg.securityaudit.controller;
 import com.ntg.securityaudit.entity.Site;
 import com.ntg.securityaudit.enums.SiteStatus;
 import com.ntg.securityaudit.service.SiteService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +22,7 @@ public class SiteController {
     }
 
     @GetMapping("/sites/new")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String showAddSiteForm(Model model) {
 
         model.addAttribute("site", new Site());
@@ -31,6 +33,7 @@ public class SiteController {
     }
 
     @GetMapping("/sites/edit/{id}")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String showEditSiteForm(@PathVariable Long id, Model model) {
 
         Site site = siteService.getSiteById(id);
@@ -61,6 +64,7 @@ public class SiteController {
     }
 
     @PostMapping("/sites")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String saveSite(@ModelAttribute Site site, Model model) {
 
         if (site.getId() != null) {
@@ -88,6 +92,7 @@ public class SiteController {
     }
 
     @PostMapping("/sites/{id}/delete")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String deleteSite(@PathVariable Long id) {
         siteService.deleteSite(id);
         return "redirect:/sites";

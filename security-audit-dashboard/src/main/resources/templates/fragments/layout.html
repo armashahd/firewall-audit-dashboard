@@ -20,7 +20,7 @@
                 </span>
                 <span>Dashboard</span>
             </a>
-            <a th:href="@{/sites}" class="nav-link" th:classappend="${activeNav == 'sites'} ? ' active' : ''">
+            <a th:if="${canViewSites}" th:href="@{/sites}" class="nav-link" th:classappend="${activeNav == 'sites'} ? ' active' : ''">
                 <span class="nav-icon">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21V3h18v18zm4-2h3v-4H7zm5 0h3V8h-3zm5 0h3v-7h-3z"/></svg>
                 </span>
@@ -50,11 +50,13 @@
                 </span>
                 <span>Reports</span>
             </a>
-            <a th:href="@{/settings}" class="nav-link" th:classappend="${activeNav == 'settings'} ? ' active' : ''">
-                <span class="nav-icon">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94a7.9 7.9 0 0 0 .06-.94 7.9 7.9 0 0 0-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.3 7.3 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 2h-3.8a.5.5 0 0 0-.49.41l-.36 2.54c-.58.23-1.13.53-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.47a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.62-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.41 1.05.71 1.63.94l.36 2.54a.5.5 0 0 0 .49.41h3.8a.5.5 0 0 0 .49-.41l.36-2.54c.58-.23 1.13-.53 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64zM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5z"/></svg>
-                </span>
-                <span>Settings</span>
+            <a th:if="${canManageAll}" th:href="@{/users}" class="nav-link">
+                <span class="nav-icon"><i class="bi bi-people" aria-hidden="true"></i></span>
+                <span>User Management</span>
+            </a>
+            <a th:if="${canViewActivityLogs}" th:href="@{/activity-logs}" class="nav-link">
+                <span class="nav-icon"><i class="bi bi-clock-history" aria-hidden="true"></i></span>
+                <span>Activity Logs</span>
             </a>
         </nav>
     </aside>
@@ -75,10 +77,13 @@
                 <div class="profile-chip">
                     <div class="avatar">A</div>
                     <div>
-                        <div class="profile-name">Administrator</div>
+                        <div class="profile-name" th:text="${currentUsername}">Administrator</div>
                         <div class="profile-role">Security Team</div>
                     </div>
                 </div>
+                <form th:action="@{/logout}" method="post">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">Logout</button>
+                </form>
             </div>
         </header>
 

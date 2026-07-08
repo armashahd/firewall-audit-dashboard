@@ -16,7 +16,7 @@
                 <h5 class="mb-1">Report Library</h5>
                 <div class="lead">Metadata records and uploaded firewall audit PDFs.</div>
             </div>
-            <div class="toolbar-group">
+            <div class="toolbar-group" th:if="${canManageAll}">
                 <a th:href="@{/reports/upload}" class="btn btn-primary">Upload Audit Report</a>
                 <a th:href="@{/reports/new}" class="btn btn-primary">Add Report</a>
             </div>
@@ -54,8 +54,8 @@
                                 <div class="btn-group btn-group-sm">
                                     <a th:href="@{/reports/details/{id}(id=${report.id})}" class="btn btn-outline-secondary">View</a>
                                     <a th:href="@{/reports/{id}/download(id=${report.id})}" class="btn btn-outline-success">Download</a>
-                                    <a th:href="@{/reports/edit/{id}(id=${report.id})}" class="btn btn-outline-primary">Edit</a>
-                                    <form th:action="@{/reports/{id}/delete(id=${report.id})}" method="post" class="d-inline" onsubmit="return confirm('Delete this report permanently?');">
+                                    <a th:if="${canManageAll}" th:href="@{/reports/edit/{id}(id=${report.id})}" class="btn btn-outline-primary">Edit</a>
+                                    <form th:if="${canManageAll}" th:action="@{/reports/{id}/delete(id=${report.id})}" method="post" class="d-inline" onsubmit="return confirm('Delete this report permanently?');">
                                         <button type="submit" class="btn btn-outline-danger">Delete</button>
                                     </form>
                                 </div>

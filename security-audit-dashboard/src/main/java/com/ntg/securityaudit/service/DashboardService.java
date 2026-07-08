@@ -158,6 +158,7 @@ public class DashboardService {
 
         buildTrends(dto, audits, allFindings);
         buildCharts(dto, audits, findings);
+        buildExportSummaries(dto, findings);
         dto.setTopRisks(buildTopRisks(findings));
         dto.setRecentAuditActivity(buildRecentAuditActivity(audits));
         dto.setUpcomingActionPlans(buildUpcomingActionPlans(findings, audits));
@@ -259,6 +260,41 @@ public class DashboardService {
         dto.setAuditAreaData(sortedCategoryCounts.keySet().stream()
                 .map(category -> calculateAuditAreaScore(findings, category))
                 .toList());
+    }
+
+    private void buildExportSummaries(DashboardDTO dto, List<Finding> findings) {
+        List<Finding> complianceFindings = findings.stream()
+                .filter(finding -> "Compliance".equalsIgnoreCase(normalizeCategory(finding)))
+                .toList();
+        List<Finding> vulnerabilityFindings = findings.stream()
+                .filter(finding -> "Vulnerability".equalsIgnoreCase(normalizeCategory(finding)))
+                .toList();
+
+        dto.setFindingTypeSummary(List.of(
+                new DashboardDTO.SummaryItem("Compliances", (long) complianceFindings.size()),
+                new DashboardDTO.SummaryItem("Vulnerabilities", (long) vulnerabilityFindings.size()),
+                new DashboardDTO.SummaryItem("Other Findings", findings.stream()
+                        .filter(finding -> !"Compliance".equalsIgnoreCase(normalizeCategory(finding)))
+                        .filter(finding -> !"Vulnerability".equalsIgnoreCase(normalizeCategory(finding)))
+                        .count())
+        ));
+        dto.setComplianceStatusSummary(buildStatusSummary(complianceFindings));
+        dto.setVulnerabilityStatusSummary(buildStatusSummary(vulnerabilityFindings));
+        dto.setVulnerabilitySeveritySummary(List.of(
+                new DashboardDTO.SummaryItem("Critical", countFindingsBySeverity(vulnerabilityFindings, Severity.CRITICAL)),
+                new DashboardDTO.SummaryItem("High", countFindingsBySeverity(vulnerabilityFindings, Severity.HIGH)),
+                new DashboardDTO.SummaryItem("Medium", countFindingsBySeverity(vulnerabilityFindings, Severity.MEDIUM)),
+                new DashboardDTO.SummaryItem("Low", countFindingsBySeverity(vulnerabilityFindings, Severity.LOW))
+        ));
+    }
+
+    private List<DashboardDTO.SummaryItem> buildStatusSummary(List<Finding> findings) {
+        return List.of(
+                new DashboardDTO.SummaryItem("Open / In Progress", findings.stream().filter(this::isOpenOrInProgress).count()),
+                new DashboardDTO.SummaryItem("Closed", findings.stream().filter(finding -> finding.getStatus() != null && finding.getStatus().isClosed()).count()),
+                new DashboardDTO.SummaryItem("Accepted Risk", findings.stream().filter(finding -> finding.getStatus() != null && finding.getStatus().isAcceptedRisk()).count()),
+                new DashboardDTO.SummaryItem("Overdue", findings.stream().filter(this::isOverdue).count())
+        );
     }
 
     private void buildTrends(DashboardDTO dto, List<Audit> audits, List<Finding> allFindings) {

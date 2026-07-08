@@ -4,6 +4,7 @@ import com.ntg.securityaudit.entity.Audit;
 import com.ntg.securityaudit.entity.Site;
 import com.ntg.securityaudit.service.AuditService;
 import com.ntg.securityaudit.service.SiteService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
@@ -64,6 +65,7 @@ public class AuditController {
     }
 
     @GetMapping("/audits/new")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String showAddAuditForm(Model model) {
         Audit audit = new Audit();
         model.addAttribute("audit", audit);
@@ -75,6 +77,7 @@ public class AuditController {
     }
 
     @GetMapping("/audits/edit/{id}")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String showEditAuditForm(@PathVariable Long id, Model model) {
         Audit audit = auditService.getAuditById(id);
         if (audit == null) {
@@ -101,6 +104,7 @@ public class AuditController {
     }
 
     @PostMapping("/audits")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String saveAudit(@ModelAttribute Audit audit, @RequestParam(required = false) Long siteId, Model model) {
         if (!isValidAudit(audit, siteId, model)) {
             model.addAttribute("sites", siteService.getAllSites());
@@ -117,6 +121,7 @@ public class AuditController {
     }
 
     @PostMapping("/audits/{id}/delete")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String deleteAudit(@PathVariable Long id) {
         auditService.deleteAudit(id);
         return "redirect:/audits";

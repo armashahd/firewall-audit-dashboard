@@ -5,6 +5,7 @@ import com.ntg.securityaudit.enums.Severity;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "findings")
@@ -106,6 +107,30 @@ public class Finding {
         this.closedDate = closedDate;
     }
 
+    public String getClosedBy() {
+        return closedBy;
+    }
+
+    public void setClosedBy(String closedBy) {
+        this.closedBy = closedBy;
+    }
+
+    public String getLastUpdatedBy() {
+        return lastUpdatedBy;
+    }
+
+    public void setLastUpdatedBy(String lastUpdatedBy) {
+        this.lastUpdatedBy = lastUpdatedBy;
+    }
+
+    public LocalDateTime getLastUpdatedDate() {
+        return lastUpdatedDate;
+    }
+
+    public void setLastUpdatedDate(LocalDateTime lastUpdatedDate) {
+        this.lastUpdatedDate = lastUpdatedDate;
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -139,6 +164,12 @@ public class Finding {
     private LocalDate dueDate;
 
     private LocalDate closedDate;
+
+    private String closedBy;
+
+    private String lastUpdatedBy;
+
+    private LocalDateTime lastUpdatedDate;
 
     public Finding() {
     }

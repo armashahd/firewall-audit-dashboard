@@ -2,9 +2,11 @@ package com.ntg.securityaudit.controller;
 
 import com.ntg.securityaudit.entity.AuditException;
 import com.ntg.securityaudit.enums.AuditExceptionStatus;
+import com.ntg.securityaudit.service.ActivityLogService;
 import com.ntg.securityaudit.service.AuditExceptionService;
 import com.ntg.securityaudit.service.AuditService;
 import com.ntg.securityaudit.service.SiteService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
@@ -23,13 +25,16 @@ public class AuditExceptionController {
     private final AuditExceptionService auditExceptionService;
     private final SiteService siteService;
     private final AuditService auditService;
+    private final ActivityLogService activityLogService;
 
     public AuditExceptionController(AuditExceptionService auditExceptionService,
                                     SiteService siteService,
-                                    AuditService auditService) {
+                                    AuditService auditService,
+                                    ActivityLogService activityLogService) {
         this.auditExceptionService = auditExceptionService;
         this.siteService = siteService;
         this.auditService = auditService;
+        this.activityLogService = activityLogService;
     }
 
     @GetMapping({"/audit-exceptions", "/exceptions"})
@@ -42,6 +47,7 @@ public class AuditExceptionController {
     }
 
     @GetMapping("/audit-exceptions/new")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String showAddAuditExceptionForm(Model model) {
         model.addAttribute("auditException", new AuditException());
         model.addAttribute("sites", siteService.getAllSites());
@@ -54,6 +60,7 @@ public class AuditExceptionController {
     }
 
     @GetMapping("/audit-exceptions/edit/{id}")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String showEditAuditExceptionForm(@PathVariable Long id, Model model) {
         AuditException auditException = auditExceptionService.getAuditExceptionById(id);
         if (auditException == null) {
@@ -82,6 +89,7 @@ public class AuditExceptionController {
     }
 
     @PostMapping("/audit-exceptions")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String saveAuditException(@ModelAttribute AuditException auditException,
                                      @RequestParam(required = false) Long relatedSiteId,
                                      @RequestParam(required = false) Long relatedAuditId,
@@ -102,11 +110,24 @@ public class AuditExceptionController {
         auditException.setStatus(auditException.getExpiryDate() != null && auditException.getExpiryDate().isBefore(LocalDate.now())
                 ? AuditExceptionStatus.EXPIRED
                 : AuditExceptionStatus.ACTIVE);
-        auditExceptionService.saveAuditException(auditException);
+        boolean created = auditException.getId() == null;
+        AuditException savedException = auditExceptionService.saveAuditException(auditException);
+        if (created) {
+            activityLogService.log(
+                    "AUDIT_EXCEPTION_CREATED",
+                    "Audit Exception",
+                    savedException.getId(),
+                    savedException.getExceptionName(),
+                    null,
+                    savedException.getStatus() != null ? savedException.getStatus().name() : null,
+                    savedException.getJustification()
+            );
+        }
         return "redirect:/audit-exceptions";
     }
 
     @PostMapping("/audit-exceptions/{id}/delete")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String deleteAuditException(@PathVariable Long id) {
         auditExceptionService.deleteAuditException(id);
         return "redirect:/audit-exceptions";

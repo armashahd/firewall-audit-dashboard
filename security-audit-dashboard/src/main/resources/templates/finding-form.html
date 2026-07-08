@@ -77,6 +77,11 @@
                         <label class="form-label">Closed Date</label>
                         <input type="date" class="form-control" name="closedDate" th:value="${finding.closedDate != null ? #temporals.format(finding.closedDate, 'yyyy-MM-dd') : ''}">
                     </div>
+                    <div class="col-12">
+                        <label class="form-label">Workflow Comment</label>
+                        <textarea rows="3" class="form-control" name="workflowComment" th:classappend="${workflowCommentError} ? ' is-invalid' : ''" placeholder="Required when closing a finding or accepting risk."></textarea>
+                        <div class="invalid-feedback d-block" th:if="${workflowCommentError}" th:text="${workflowCommentError}"></div>
+                    </div>
                     <div class="col-12 d-flex flex-wrap gap-2 pt-2">
                         <button type="submit" class="btn btn-primary" th:text="${submitLabel}">Save Finding</button>
                         <a th:href="@{/findings}" class="btn btn-outline-secondary">Cancel</a>

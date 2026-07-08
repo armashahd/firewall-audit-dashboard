@@ -56,6 +56,10 @@ public class DashboardDTO {
     private List<ExceptionExpiryItem> upcomingExceptionExpiries = new ArrayList<>();
     private List<SiteHeatmapItem> siteHeatmap = new ArrayList<>();
     private List<ActivityFeedItem> activityFeed = new ArrayList<>();
+    private List<SummaryItem> findingTypeSummary = new ArrayList<>();
+    private List<SummaryItem> complianceStatusSummary = new ArrayList<>();
+    private List<SummaryItem> vulnerabilityStatusSummary = new ArrayList<>();
+    private List<SummaryItem> vulnerabilitySeveritySummary = new ArrayList<>();
 
     public DashboardDTO() {
     }
@@ -458,6 +462,67 @@ public class DashboardDTO {
 
     public void setActivityFeed(List<ActivityFeedItem> activityFeed) {
         this.activityFeed = activityFeed;
+    }
+
+    public List<SummaryItem> getFindingTypeSummary() {
+        return findingTypeSummary;
+    }
+
+    public void setFindingTypeSummary(List<SummaryItem> findingTypeSummary) {
+        this.findingTypeSummary = findingTypeSummary;
+    }
+
+    public List<SummaryItem> getComplianceStatusSummary() {
+        return complianceStatusSummary;
+    }
+
+    public void setComplianceStatusSummary(List<SummaryItem> complianceStatusSummary) {
+        this.complianceStatusSummary = complianceStatusSummary;
+    }
+
+    public List<SummaryItem> getVulnerabilityStatusSummary() {
+        return vulnerabilityStatusSummary;
+    }
+
+    public void setVulnerabilityStatusSummary(List<SummaryItem> vulnerabilityStatusSummary) {
+        this.vulnerabilityStatusSummary = vulnerabilityStatusSummary;
+    }
+
+    public List<SummaryItem> getVulnerabilitySeveritySummary() {
+        return vulnerabilitySeveritySummary;
+    }
+
+    public void setVulnerabilitySeveritySummary(List<SummaryItem> vulnerabilitySeveritySummary) {
+        this.vulnerabilitySeveritySummary = vulnerabilitySeveritySummary;
+    }
+
+    public static class SummaryItem {
+        private String label;
+        private Long count;
+
+        public SummaryItem() {
+        }
+
+        public SummaryItem(String label, Long count) {
+            this.label = label;
+            this.count = count;
+        }
+
+        public String getLabel() {
+            return label;
+        }
+
+        public void setLabel(String label) {
+            this.label = label;
+        }
+
+        public Long getCount() {
+            return count;
+        }
+
+        public void setCount(Long count) {
+            this.count = count;
+        }
     }
 
     public static class RiskItem {

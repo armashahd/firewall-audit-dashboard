@@ -16,7 +16,7 @@
                 <h5 class="mb-1">Exception Register</h5>
                 <div class="lead">Approved deviations, temporary acceptances, and closure status.</div>
             </div>
-            <div class="toolbar-group">
+            <div class="toolbar-group" th:if="${canManageAll}">
                 <a th:href="@{/audit-exceptions/new}" class="btn btn-primary">Add Exception</a>
             </div>
         </div>
@@ -62,8 +62,8 @@
                             <td class="text-nowrap">
                                 <div class="btn-group btn-group-sm">
                                     <a th:href="@{/audit-exceptions/details/{id}(id=${auditException.id})}" class="btn btn-outline-secondary">View</a>
-                                    <a th:href="@{/audit-exceptions/edit/{id}(id=${auditException.id})}" class="btn btn-outline-primary">Edit</a>
-                                    <form th:action="@{/audit-exceptions/{id}/delete(id=${auditException.id})}" method="post" class="d-inline" onsubmit="return confirm('Delete this exception permanently?');">
+                                    <a th:if="${canManageAll}" th:href="@{/audit-exceptions/edit/{id}(id=${auditException.id})}" class="btn btn-outline-primary">Edit</a>
+                                    <form th:if="${canManageAll}" th:action="@{/audit-exceptions/{id}/delete(id=${auditException.id})}" method="post" class="d-inline" onsubmit="return confirm('Delete this exception permanently?');">
                                         <button type="submit" class="btn btn-outline-danger">Delete</button>
                                     </form>
                                 </div>

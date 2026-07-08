@@ -16,10 +16,12 @@
                 <h5 class="mb-1">Finding Register</h5>
                 <div class="lead">Risk items are linked to an audit and managed through closure.</div>
             </div>
-            <div class="toolbar-group">
+            <div class="toolbar-group" th:if="${canManageAll}">
                 <a th:href="@{/findings/new}" class="btn btn-primary">Add Finding</a>
             </div>
         </div>
+        <div th:if="${successMessage}" class="alert alert-success" role="alert" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert-danger" role="alert" th:text="${errorMessage}"></div>
 
         <div class="card dashboard-card">
             <div class="card-body">
@@ -117,13 +119,18 @@
                                 </span>
                             </td>
                             <td>
-                                <span th:switch="${finding.status != null ? finding.status.name() : ''}">
-                                    <span th:case="'OPEN'" class="badge bg-danger">Open</span>
-                                    <span th:case="'IN_PROGRESS'" class="badge bg-warning text-dark">In Progress</span>
-                                    <span th:case="'CLOSED'" class="badge bg-success">Closed</span>
-                                    <span th:case="'ACCEPTED_RISK'" class="badge bg-secondary">Accepted Risk</span>
-                                    <span th:case="*" class="badge bg-light text-dark border">N/A</span>
-                                </span>
+                                <form th:action="@{/findings/{id}/status(id=${finding.id})}" method="post" class="finding-status-form">
+                                    <input type="hidden" name="comment" class="finding-status-comment">
+                                    <select name="status"
+                                            class="form-select form-select-sm finding-status-select"
+                                            th:data-current-status="${finding.status != null ? finding.status.name() : ''}"
+                                            th:data-finding-title="${finding.title}">
+                                        <option th:each="statusOption : ${statuses}"
+                                                th:value="${statusOption.name()}"
+                                                th:selected="${finding.status == statusOption}"
+                                                th:text="${statusOption.displayName}"></option>
+                                    </select>
+                                </form>
                             </td>
                             <td th:text="${finding.category != null ? finding.category : '-'}"></td>
                             <td th:text="${finding.assignedTo != null ? finding.assignedTo : '-'}"></td>
@@ -131,8 +138,8 @@
                             <td class="text-nowrap">
                                 <div class="btn-group btn-group-sm">
                                     <a th:href="@{/findings/details/{id}(id=${finding.id})}" class="btn btn-outline-secondary">View</a>
-                                    <a th:href="@{/findings/edit/{id}(id=${finding.id})}" class="btn btn-outline-primary">Edit</a>
-                                    <form th:action="@{/findings/{id}/delete(id=${finding.id})}" method="post" class="d-inline" onsubmit="return confirm('Delete this finding permanently?');">
+                                    <a th:if="${canManageAll}" th:href="@{/findings/edit/{id}(id=${finding.id})}" class="btn btn-outline-primary">Edit</a>
+                                    <form th:if="${canManageAll}" th:action="@{/findings/{id}/delete(id=${finding.id})}" method="post" class="d-inline" onsubmit="return confirm('Delete this finding permanently?');">
                                         <button type="submit" class="btn btn-outline-danger">Delete</button>
                                     </form>
                                 </div>
@@ -143,7 +150,95 @@
                 </div>
             </div>
         </div>
+
+        <div class="modal fade" id="findingStatusCommentModal" tabindex="-1" aria-labelledby="findingStatusCommentModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="findingStatusCommentModalLabel">Workflow Comment</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted mb-3" id="findingStatusCommentHelp"></p>
+                        <label for="findingStatusCommentText" class="form-label" id="findingStatusCommentLabel">Comment</label>
+                        <textarea id="findingStatusCommentText" class="form-control" rows="4" required></textarea>
+                        <div class="invalid-feedback">A comment is required for this status.</div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="findingStatusCommentSave">Save Status</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </section>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const modalElement = document.getElementById('findingStatusCommentModal');
+        const modal = new bootstrap.Modal(modalElement);
+        const modalTitle = document.getElementById('findingStatusCommentModalLabel');
+        const modalHelp = document.getElementById('findingStatusCommentHelp');
+        const modalLabel = document.getElementById('findingStatusCommentLabel');
+        const modalText = document.getElementById('findingStatusCommentText');
+        const modalSave = document.getElementById('findingStatusCommentSave');
+        let pendingForm = null;
+        let pendingSelect = null;
+
+        document.querySelectorAll('.finding-status-select').forEach(function (select) {
+            select.addEventListener('change', function () {
+                const selectedStatus = select.value;
+                const currentStatus = select.dataset.currentStatus;
+                const findingTitle = select.dataset.findingTitle || 'this finding';
+
+                if (selectedStatus === currentStatus) {
+                    return;
+                }
+
+                if (selectedStatus === 'CLOSED' || selectedStatus === 'ACCEPTED_RISK') {
+                    pendingForm = select.closest('form');
+                    pendingSelect = select;
+                    modalText.value = '';
+                    modalText.classList.remove('is-invalid');
+
+                    if (selectedStatus === 'CLOSED') {
+                        modalTitle.textContent = 'Close Finding';
+                        modalLabel.textContent = 'Resolution comment';
+                        modalHelp.textContent = 'Add the resolution comment for "' + findingTitle + '".';
+                    } else {
+                        modalTitle.textContent = 'Accept Risk';
+                        modalLabel.textContent = 'Risk acceptance justification';
+                        modalHelp.textContent = 'Add the risk acceptance justification for "' + findingTitle + '".';
+                    }
+
+                    modal.show();
+                } else {
+                    select.closest('form').submit();
+                }
+            });
+        });
+
+        modalSave.addEventListener('click', function () {
+            const comment = modalText.value.trim();
+            if (!comment) {
+                modalText.classList.add('is-invalid');
+                modalText.focus();
+                return;
+            }
+
+            pendingForm.querySelector('.finding-status-comment').value = comment;
+            pendingForm.submit();
+        });
+
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            if (pendingSelect && pendingForm && !pendingForm.querySelector('.finding-status-comment').value) {
+                pendingSelect.value = pendingSelect.dataset.currentStatus;
+            }
+            pendingForm = null;
+            pendingSelect = null;
+        });
+    });
+</script>
 </body>
 </html>

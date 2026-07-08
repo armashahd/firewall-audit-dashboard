@@ -18,8 +18,8 @@
             </div>
             <div class="toolbar-group">
                 <a th:href="@{/sites}" class="btn btn-outline-secondary">Back</a>
-                <a th:href="@{/sites/edit/{id}(id=${site.id})}" class="btn btn-outline-primary">Edit</a>
-                <form th:action="@{/sites/{id}/delete(id=${site.id})}" method="post" onsubmit="return confirm('Delete this site permanently?');">
+                <a th:if="${canManageAll}" th:href="@{/sites/edit/{id}(id=${site.id})}" class="btn btn-outline-primary">Edit</a>
+                <form th:if="${canManageAll}" th:action="@{/sites/{id}/delete(id=${site.id})}" method="post" onsubmit="return confirm('Delete this site permanently?');">
                     <button type="submit" class="btn btn-outline-danger">Delete</button>
                 </form>
             </div>

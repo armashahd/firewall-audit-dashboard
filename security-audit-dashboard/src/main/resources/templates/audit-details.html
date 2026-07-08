@@ -18,8 +18,8 @@
             </div>
             <div class="toolbar-group">
                 <a th:href="@{/audits}" class="btn btn-outline-secondary">Back</a>
-                <a th:href="@{/audits/edit/{id}(id=${audit.id})}" class="btn btn-outline-primary">Edit</a>
-                <form th:action="@{/audits/{id}/delete(id=${audit.id})}" method="post" onsubmit="return confirm('Delete this audit permanently?');">
+                <a th:if="${canManageAll}" th:href="@{/audits/edit/{id}(id=${audit.id})}" class="btn btn-outline-primary">Edit</a>
+                <form th:if="${canManageAll}" th:action="@{/audits/{id}/delete(id=${audit.id})}" method="post" onsubmit="return confirm('Delete this audit permanently?');">
                     <button type="submit" class="btn btn-outline-danger">Delete</button>
                 </form>
             </div>

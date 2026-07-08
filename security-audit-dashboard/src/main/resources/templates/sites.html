@@ -16,7 +16,7 @@
                 <h5 class="mb-1">Registered Sites</h5>
                 <div class="lead">Operational inventory across all monitored locations.</div>
             </div>
-            <div class="toolbar-group">
+            <div class="toolbar-group" th:if="${canManageAll}">
                 <a th:href="@{/sites/new}" class="btn btn-primary">Add Site</a>
             </div>
         </div>
@@ -65,8 +65,8 @@
                             <td class="text-nowrap">
                                 <div class="btn-group btn-group-sm">
                                     <a th:href="@{/sites/details/{id}(id=${site.id})}" class="btn btn-outline-secondary">View</a>
-                                    <a th:href="@{/sites/edit/{id}(id=${site.id})}" class="btn btn-outline-primary">Edit</a>
-                                    <form th:action="@{/sites/{id}/delete(id=${site.id})}" method="post" class="d-inline" onsubmit="return confirm('Delete this site permanently?');">
+                                    <a th:if="${canManageAll}" th:href="@{/sites/edit/{id}(id=${site.id})}" class="btn btn-outline-primary">Edit</a>
+                                    <form th:if="${canManageAll}" th:action="@{/sites/{id}/delete(id=${site.id})}" method="post" class="d-inline" onsubmit="return confirm('Delete this site permanently?');">
                                         <button type="submit" class="btn btn-outline-danger">Delete</button>
                                     </form>
                                 </div>

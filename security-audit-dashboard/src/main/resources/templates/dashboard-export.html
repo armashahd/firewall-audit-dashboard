@@ -9,19 +9,102 @@
 </head>
 <body class="print-page">
 <main class="container py-4">
-    <div class="d-flex justify-content-between align-items-start mb-4">
+    <header class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
         <div>
-            <h1 class="h3 mb-1">Firewall Security Dashboard Report</h1>
+            <img th:src="@{/images/ntg-logo.png}" alt="NTG logo" style="height: 58px; width: auto;" class="mb-2">
+            <h1 class="h3 mb-1" th:text="${exportTitle}">Firewall Security Dashboard Report</h1>
             <div class="text-muted">Filtered dashboard export</div>
         </div>
-        <button type="button" class="btn btn-outline-secondary no-print" onclick="window.print()">Print / Save PDF</button>
-    </div>
+        <div class="text-end">
+            <div class="fw-semibold">NTG Internal Security</div>
+            <div class="text-muted small">Confidential audit document</div>
+            <button type="button" class="btn btn-outline-secondary no-print mt-3" onclick="window.print()">Print / Save PDF</button>
+        </div>
+    </header>
 
     <div class="row g-3 mb-4">
         <div class="col-md-3"><div class="summary-metric"><div class="stat-label">Overall Score</div><div class="stat-value" th:text="${dashboard.overallSecurityScore + '%'}">0%</div></div></div>
         <div class="col-md-3"><div class="summary-metric"><div class="stat-label">Risk Level</div><div class="stat-value fs-4" th:text="${dashboard.currentRiskLevel}">Low</div></div></div>
-        <div class="col-md-3"><div class="summary-metric"><div class="stat-label">Open Findings</div><div class="stat-value" th:text="${dashboard.openFindings}">0</div></div></div>
-        <div class="col-md-3"><div class="summary-metric"><div class="stat-label">Overdue Findings</div><div class="stat-value" th:text="${dashboard.overdueFindings}">0</div></div></div>
+        <div class="col-md-3"><div class="summary-metric"><div class="stat-label" th:text="${openLabel}">Open Findings</div><div class="stat-value" th:text="${dashboard.openFindings}">0</div></div></div>
+        <div class="col-md-3"><div class="summary-metric"><div class="stat-label" th:text="${'Overdue ' + entityLabel}">Overdue Findings</div><div class="stat-value" th:text="${dashboard.overdueFindings}">0</div></div></div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-lg-6" th:if="${includeFindingTypeSummary}">
+            <div class="card dashboard-card h-100">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Finding Type Summary</h2>
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                        <tr><th>Type</th><th class="text-end">Count</th></tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="item : ${dashboard.findingTypeSummary}">
+                            <td th:text="${item.label}">Type</td>
+                            <td class="text-end" th:text="${item.count}">0</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6" th:if="${includeVulnerabilitySummary}">
+            <div class="card dashboard-card h-100">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Vulnerability Severity Summary</h2>
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                        <tr><th>Severity</th><th class="text-end">Count</th></tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="item : ${dashboard.vulnerabilitySeveritySummary}">
+                            <td th:text="${item.label}">Severity</td>
+                            <td class="text-end" th:text="${item.count}">0</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6" th:if="${includeVulnerabilitySummary}">
+            <div class="card dashboard-card h-100">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Vulnerability Status</h2>
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                        <tr><th>Status</th><th class="text-end">Count</th></tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="item : ${dashboard.vulnerabilityStatusSummary}">
+                            <td th:text="${item.label}">Status</td>
+                            <td class="text-end" th:text="${item.count}">0</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4" th:if="${includeComplianceSummary}">
+        <div class="col-lg-6">
+            <div class="card dashboard-card h-100">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Compliance Status</h2>
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                        <tr><th>Status</th><th class="text-end">Count</th></tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="item : ${dashboard.complianceStatusSummary}">
+                            <td th:text="${item.label}">Status</td>
+                            <td class="text-end" th:text="${item.count}">0</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="card dashboard-card mb-4">
@@ -33,9 +116,9 @@
                     <tr>
                         <th>Site</th>
                         <th>Latest Audit Score</th>
-                        <th>Open Findings</th>
-                        <th>Critical Findings</th>
-                        <th>Overdue Findings</th>
+                        <th th:text="${'Open ' + entityLabel}">Open Findings</th>
+                        <th th:text="${'Critical ' + entityLabel}">Critical Findings</th>
+                        <th th:text="${'Overdue ' + entityLabel}">Overdue Findings</th>
                         <th>Risk Level</th>
                     </tr>
                     </thead>
@@ -79,6 +162,11 @@
             </div>
         </div>
     </div>
+
+    <footer class="border-top pt-3 mt-4 d-flex justify-content-between text-muted small">
+        <div>NTG Firewall Security Audit Dashboard</div>
+        <div>Generated report | Internal use only</div>
+    </footer>
 </main>
 </body>
 </html>

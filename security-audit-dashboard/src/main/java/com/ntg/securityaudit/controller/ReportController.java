@@ -4,12 +4,14 @@ import com.ntg.securityaudit.dto.ReportUploadResult;
 import com.ntg.securityaudit.entity.Audit;
 import com.ntg.securityaudit.entity.Report;
 import com.ntg.securityaudit.service.AuditService;
+import com.ntg.securityaudit.service.ActivityLogService;
 import com.ntg.securityaudit.service.ReportUploadService;
 import com.ntg.securityaudit.service.ReportService;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
@@ -32,13 +34,16 @@ public class ReportController {
     private final ReportService reportService;
     private final AuditService auditService;
     private final ReportUploadService reportUploadService;
+    private final ActivityLogService activityLogService;
 
     public ReportController(ReportService reportService,
                             AuditService auditService,
-                            ReportUploadService reportUploadService) {
+                            ReportUploadService reportUploadService,
+                            ActivityLogService activityLogService) {
         this.reportService = reportService;
         this.auditService = auditService;
         this.reportUploadService = reportUploadService;
+        this.activityLogService = activityLogService;
     }
 
     @GetMapping("/reports")
@@ -48,6 +53,7 @@ public class ReportController {
     }
 
     @GetMapping("/reports/new")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String showAddReportForm(Model model) {
         model.addAttribute("report", new Report());
         model.addAttribute("audits", auditService.getAllAudits());
@@ -58,16 +64,29 @@ public class ReportController {
     }
 
     @GetMapping("/reports/upload")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String showUploadReportForm(Model model) {
         model.addAttribute("uploadError", null);
         return "report-upload";
     }
 
     @PostMapping("/reports/upload")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String uploadReport(@RequestParam("file") MultipartFile file, Model model) {
         try {
             ReportUploadResult result = reportUploadService.uploadAuditReport(file);
             model.addAttribute("result", result);
+            if (!result.isDuplicate()) {
+                activityLogService.log(
+                        "PDF_REPORT_UPLOADED",
+                        "Report",
+                        result.getReportId(),
+                        file.getOriginalFilename(),
+                        null,
+                        "Imported " + result.getFindingCount() + " finding(s)",
+                        result.getMessage()
+                );
+            }
             return "report-upload-result";
         } catch (IllegalArgumentException | IOException ex) {
             model.addAttribute("uploadError", ex.getMessage());
@@ -82,6 +101,7 @@ public class ReportController {
     }
 
     @GetMapping("/reports/edit/{id}")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String showEditReportForm(@PathVariable Long id, Model model) {
         Report report = reportService.getReportById(id);
         if (report == null) {
@@ -108,6 +128,7 @@ public class ReportController {
     }
 
     @PostMapping("/reports")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String saveReport(@ModelAttribute Report report, @RequestParam(required = false) Long auditId, Model model) {
         if (!isValidReport(report, auditId, model)) {
             model.addAttribute("audits", auditService.getAllAudits());
@@ -127,6 +148,7 @@ public class ReportController {
     }
 
     @PostMapping("/reports/{id}/delete")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String deleteReport(@PathVariable Long id) {
         reportService.deleteReport(id);
         return "redirect:/reports";

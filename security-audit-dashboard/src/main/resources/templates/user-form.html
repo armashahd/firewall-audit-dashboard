@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${formTitle}">User Form</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: layout('settings', ${formTitle}, 'Create or update a dashboard user.', ~{::content})}">
+    <section th:fragment="content">
+        <div class="card dashboard-card">
+            <div class="card-body p-4 p-lg-5">
+                <div th:if="${errorMessage}" class="alert alert-danger" role="alert" th:text="${errorMessage}"></div>
+                <form th:action="@{/users}" th:object="${appUser}" method="post" class="row g-3">
+                    <input type="hidden" th:field="*{id}">
+                    <div class="col-md-6">
+                        <label class="form-label">Username</label>
+                        <input type="text" class="form-control" th:field="*{username}" th:classappend="${usernameError} ? ' is-invalid' : ''">
+                        <div class="invalid-feedback d-block" th:if="${usernameError}" th:text="${usernameError}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Display Name</label>
+                        <input type="text" class="form-control" th:field="*{displayName}" th:classappend="${displayNameError} ? ' is-invalid' : ''">
+                        <div class="invalid-feedback d-block" th:if="${displayNameError}" th:text="${displayNameError}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Role</label>
+                        <select class="form-select" th:field="*{role}" th:classappend="${roleError} ? ' is-invalid' : ''">
+                            <option value="">Select role</option>
+                            <option th:each="roleOption : ${roles}" th:value="${roleOption}" th:text="${roleOption}"></option>
+                        </select>
+                        <div class="invalid-feedback d-block" th:if="${roleError}" th:text="${roleError}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" name="rawPassword" th:classappend="${passwordError} ? ' is-invalid' : ''" placeholder="Required for new users">
+                        <div class="invalid-feedback d-block" th:if="${passwordError}" th:text="${passwordError}"></div>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" th:field="*{enabled}">
+                            <label class="form-check-label">Enabled</label>
+                        </div>
+                    </div>
+                    <div class="col-12 d-flex flex-wrap gap-2 pt-2">
+                        <button type="submit" class="btn btn-primary" th:text="${submitLabel}">Save User</button>
+                        <a th:href="@{/users}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>

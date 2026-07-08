@@ -16,7 +16,7 @@
                 <h5 class="mb-1">Audit Register</h5>
                 <div class="lead">Every audit is tied to a site and tracked through its lifecycle.</div>
             </div>
-            <div class="toolbar-group">
+            <div class="toolbar-group" th:if="${canManageAll}">
                 <a th:href="@{/audits/new}" class="btn btn-primary">Add Audit</a>
             </div>
         </div>
@@ -100,8 +100,8 @@
                             <td class="text-nowrap">
                                 <div class="btn-group btn-group-sm">
                                     <a th:href="@{/audits/details/{id}(id=${audit.id})}" class="btn btn-outline-secondary">View</a>
-                                    <a th:href="@{/audits/edit/{id}(id=${audit.id})}" class="btn btn-outline-primary">Edit</a>
-                                    <form th:action="@{/audits/{id}/delete(id=${audit.id})}" method="post" class="d-inline" onsubmit="return confirm('Delete this audit permanently?');">
+                                    <a th:if="${canManageAll}" th:href="@{/audits/edit/{id}(id=${audit.id})}" class="btn btn-outline-primary">Edit</a>
+                                    <form th:if="${canManageAll}" th:action="@{/audits/{id}/delete(id=${audit.id})}" method="post" class="d-inline" onsubmit="return confirm('Delete this audit permanently?');">
                                         <button type="submit" class="btn btn-outline-danger">Delete</button>
                                     </form>
                                 </div>

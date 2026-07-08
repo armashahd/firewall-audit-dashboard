@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Activity Logs Print</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+</head>
+<body>
+<main class="page-main">
+    <div class="page-actions">
+        <div>
+            <h1 class="h4 mb-1">Activity Logs</h1>
+            <div class="lead">Printable activity log export.</div>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="window.print()">Print Logs</button>
+    </div>
+    <div class="card dashboard-card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead>
+                    <tr>
+                        <th>Date/Time</th>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Action Type</th>
+                        <th>Entity Type</th>
+                        <th>Entity ID/Name</th>
+                        <th>Old Value</th>
+                        <th>New Value</th>
+                        <th>Comment</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="log : ${logs}">
+                        <td class="text-nowrap" th:text="${log.createdAt != null ? #temporals.format(log.createdAt, 'yyyy-MM-dd HH:mm:ss') : '-'}"></td>
+                        <td th:text="${log.username != null ? log.username : '-'}"></td>
+                        <td th:text="${log.role != null ? log.role : '-'}"></td>
+                        <td th:text="${log.actionType != null ? log.actionType : '-'}"></td>
+                        <td th:text="${log.entityType != null ? log.entityType : '-'}"></td>
+                        <td th:text="${(log.entityId != null ? log.entityId : '-') + (log.entityName != null ? ' / ' + log.entityName : '')}"></td>
+                        <td style="white-space:pre-wrap;" th:text="${log.oldValue != null ? log.oldValue : '-'}"></td>
+                        <td style="white-space:pre-wrap;" th:text="${log.newValue != null ? log.newValue : '-'}"></td>
+                        <td style="white-space:pre-wrap;" th:text="${log.comment != null ? log.comment : '-'}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

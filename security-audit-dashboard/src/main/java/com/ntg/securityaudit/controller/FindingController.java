@@ -5,8 +5,10 @@ import com.ntg.securityaudit.entity.Finding;
 import com.ntg.securityaudit.enums.FindingStatus;
 import com.ntg.securityaudit.enums.Severity;
 import com.ntg.securityaudit.service.AuditService;
+import com.ntg.securityaudit.service.FindingActivityLogService;
 import com.ntg.securityaudit.service.FindingService;
 import com.ntg.securityaudit.service.SiteService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
@@ -15,7 +17,9 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
@@ -24,11 +28,16 @@ import java.util.Objects;
 public class FindingController {
 
     private final FindingService findingService;
+    private final FindingActivityLogService findingActivityLogService;
     private final AuditService auditService;
     private final SiteService siteService;
 
-    public FindingController(FindingService findingService, AuditService auditService, SiteService siteService) {
+    public FindingController(FindingService findingService,
+                             FindingActivityLogService findingActivityLogService,
+                             AuditService auditService,
+                             SiteService siteService) {
         this.findingService = findingService;
+        this.findingActivityLogService = findingActivityLogService;
         this.auditService = auditService;
         this.siteService = siteService;
     }
@@ -74,6 +83,7 @@ public class FindingController {
     }
 
     @GetMapping("/findings/new")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String showAddFindingForm(Model model) {
         model.addAttribute("finding", new Finding());
         model.addAttribute("audits", auditService.getAllAudits());
@@ -84,6 +94,7 @@ public class FindingController {
     }
 
     @GetMapping("/findings/edit/{id}")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String showEditFindingForm(@PathVariable Long id, Model model) {
         Finding finding = findingService.getFindingById(id);
         if (finding == null) {
@@ -106,12 +117,22 @@ public class FindingController {
         }
 
         model.addAttribute("finding", finding);
+        model.addAttribute("activityLogs", findingActivityLogService.getLogsForFinding(id));
         return "finding-details";
     }
 
     @PostMapping("/findings")
-    public String saveFinding(@ModelAttribute Finding finding, @RequestParam(required = false) Long auditId, Model model) {
-        if (!isValidFinding(finding, auditId, model)) {
+    @PreAuthorize("hasRole('SUPERADMIN')")
+    public String saveFinding(@ModelAttribute Finding finding,
+                              @RequestParam(required = false) Long auditId,
+                              @RequestParam(required = false) String workflowComment,
+                              Principal principal,
+                              Model model) {
+        Finding existingFinding = finding.getId() != null ? findingService.getFindingById(finding.getId()) : null;
+        FindingStatus requestedStatus = finding.getStatus();
+        boolean statusChanged = existingFinding != null && requestedStatus != existingFinding.getStatus();
+
+        if (!isValidFinding(finding, auditId, workflowComment, statusChanged, model)) {
             model.addAttribute("audits", auditService.getAllAudits());
             model.addAttribute("selectedAuditId", auditId);
             model.addAttribute("formTitle", finding.getId() == null ? "Add New Finding" : "Edit Finding");
@@ -121,17 +142,46 @@ public class FindingController {
 
         Audit audit = auditService.getAuditById(auditId);
         finding.setAudit(audit);
+
+        if (statusChanged) {
+            finding.setStatus(existingFinding.getStatus());
+            findingService.saveFinding(finding);
+            findingService.updateStatus(finding.getId(), requestedStatus, workflowComment, currentUsername(principal));
+            return "redirect:/findings";
+        }
+
         findingService.saveFinding(finding);
         return "redirect:/findings";
     }
 
+    @PostMapping("/findings/{id}/status")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','AUDITOR')")
+    public String updateFindingStatus(@PathVariable Long id,
+                                      @RequestParam FindingStatus status,
+                                      @RequestParam(required = false) String comment,
+                                      Principal principal,
+                                      RedirectAttributes redirectAttributes) {
+        try {
+            findingService.updateStatus(id, status, comment, currentUsername(principal));
+            redirectAttributes.addFlashAttribute("successMessage", "Finding status updated.");
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/findings";
+    }
+
     @PostMapping("/findings/{id}/delete")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String deleteFinding(@PathVariable Long id) {
         findingService.deleteFinding(id);
         return "redirect:/findings";
     }
 
-    private boolean isValidFinding(Finding finding, Long auditId, Model model) {
+    private String currentUsername(Principal principal) {
+        return principal != null && StringUtils.hasText(principal.getName()) ? principal.getName() : "Security Team";
+    }
+
+    private boolean isValidFinding(Finding finding, Long auditId, String workflowComment, boolean statusChanged, Model model) {
         boolean valid = true;
 
         if (auditId == null) {
@@ -178,6 +228,20 @@ public class FindingController {
 
         if (finding.getStatus() == FindingStatus.CLOSED && finding.getClosedDate() == null) {
             finding.setClosedDate(java.time.LocalDate.now());
+        }
+
+        if ((finding.getId() == null || statusChanged)
+                && finding.getStatus() == FindingStatus.CLOSED
+                && !StringUtils.hasText(workflowComment)) {
+            model.addAttribute("workflowCommentError", "Resolution comment is required to close a finding.");
+            valid = false;
+        }
+
+        if ((finding.getId() == null || statusChanged)
+                && finding.getStatus() == FindingStatus.ACCEPTED_RISK
+                && !StringUtils.hasText(workflowComment)) {
+            model.addAttribute("workflowCommentError", "Risk acceptance justification is required.");
+            valid = false;
         }
 
         if (!StringUtils.hasText(finding.getCategory())) {

@@ -18,8 +18,8 @@
             </div>
             <div class="toolbar-group">
                 <a th:href="@{/audit-exceptions}" class="btn btn-outline-secondary">Back</a>
-                <a th:href="@{/audit-exceptions/edit/{id}(id=${auditException.id})}" class="btn btn-outline-primary">Edit</a>
-                <form th:action="@{/audit-exceptions/{id}/delete(id=${auditException.id})}" method="post" onsubmit="return confirm('Delete this exception permanently?');">
+                <a th:if="${canManageAll}" th:href="@{/audit-exceptions/edit/{id}(id=${auditException.id})}" class="btn btn-outline-primary">Edit</a>
+                <form th:if="${canManageAll}" th:action="@{/audit-exceptions/{id}/delete(id=${auditException.id})}" method="post" onsubmit="return confirm('Delete this exception permanently?');">
                     <button type="submit" class="btn btn-outline-danger">Delete</button>
                 </form>
             </div>
