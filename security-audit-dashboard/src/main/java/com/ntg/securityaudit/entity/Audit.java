@@ -36,6 +36,11 @@ public class Audit {
         return id;
     }
 
+    @Transient
+    public String getReferenceNumber() {
+        return formatReferenceNumber("AUD", id);
+    }
+
     public Site getSite() {
         return site;
     }
@@ -94,5 +99,9 @@ public class Audit {
 
     public void setRemarks(String remarks) {
         this.remarks = remarks;
+    }
+
+    private String formatReferenceNumber(String prefix, Long value) {
+        return value == null ? prefix + "-NEW" : "%s-%04d".formatted(prefix, value);
     }
 }

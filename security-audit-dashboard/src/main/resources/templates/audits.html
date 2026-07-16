@@ -73,7 +73,7 @@
                     <table class="table table-striped table-hover align-middle">
                         <thead>
                         <tr>
-                            <th>Audit ID</th>
+                            <th>Audit No.</th>
                             <th>Site Name</th>
                             <th>Audit Round</th>
                             <th>Audit Date</th>
@@ -88,7 +88,7 @@
                             <td colspan="8" class="text-center py-5 text-muted">No audits found.</td>
                         </tr>
                         <tr th:each="audit : ${audits}">
-                            <td th:text="${audit.id}"></td>
+                            <td><a th:href="@{/audits/details/{id}(id=${audit.id})}" class="fw-semibold text-decoration-none" th:text="${audit.referenceNumber}"></a></td>
                             <td>
                                 <a th:href="@{/audits/details/{id}(id=${audit.id})}" class="fw-semibold text-decoration-none" th:text="${audit.site != null ? audit.site.name : '-'}"></a>
                             </td>

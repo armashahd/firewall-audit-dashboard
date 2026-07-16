@@ -597,7 +597,7 @@ public class DashboardService {
                     item.setTargetDate(finding.getDueDate());
                     item.setStatus(finding.getStatus() != null ? finding.getStatus().getDisplayName() : "Open");
                     Audit linkedAudit = finding.getAudit() != null ? auditMap.get(finding.getAudit().getId()) : null;
-                    item.setNotes(linkedAudit != null && linkedAudit.getSite() != null ? linkedAudit.getSite().getName() + " / Audit #" + linkedAudit.getId() : finding.getCategory());
+                    item.setNotes(linkedAudit != null && linkedAudit.getSite() != null ? linkedAudit.getSite().getName() + " / " + linkedAudit.getReferenceNumber() : finding.getCategory());
                     return item;
                 })
                 .toList();
@@ -615,7 +615,7 @@ public class DashboardService {
                     item.setExceptionId(exception.getId());
                     item.setExceptionName(exception.getExceptionName() != null ? exception.getExceptionName() : "-");
                     item.setSiteName(exception.getRelatedSite() != null ? exception.getRelatedSite().getName() : "-");
-                    item.setAuditLabel(exception.getRelatedAudit() != null ? "Audit #" + exception.getRelatedAudit().getId() : "-");
+                    item.setAuditLabel(exception.getRelatedAudit() != null ? exception.getRelatedAudit().getReferenceNumber() : "-");
                     item.setExpiryDate(exception.getExpiryDate());
                     item.setStatus(effectiveExceptionStatus(exception).name());
                     return item;

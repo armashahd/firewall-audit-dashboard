@@ -27,6 +27,7 @@
                     <table class="table table-striped table-hover align-middle">
                         <thead>
                         <tr>
+                            <th>Exception No.</th>
                             <th>Exception Name</th>
                             <th>Related Site</th>
                             <th>Related Audit</th>
@@ -39,15 +40,16 @@
                         </thead>
                         <tbody>
                         <tr th:if="${#lists.isEmpty(auditExceptions)}">
-                            <td colspan="8" class="text-center py-5 text-muted">No audit exceptions found.</td>
+                            <td colspan="9" class="text-center py-5 text-muted">No audit exceptions found.</td>
                         </tr>
                         <tr th:each="auditException : ${auditExceptions}">
+                            <td><a th:href="@{/audit-exceptions/details/{id}(id=${auditException.id})}" class="fw-semibold text-decoration-none" th:text="${auditException.referenceNumber}"></a></td>
                             <td>
                                 <a th:href="@{/audit-exceptions/details/{id}(id=${auditException.id})}" class="fw-semibold text-decoration-none" th:text="${auditException.exceptionName}"></a>
                                 <div class="text-muted small" th:text="${auditException.description != null ? auditException.description : '-'}"></div>
                             </td>
-                            <td th:text="${auditException.relatedSite != null ? auditException.relatedSite.name : '-'}"></td>
-                            <td th:text="${auditException.relatedAudit != null ? ('#' + auditException.relatedAudit.id) : '-'}"></td>
+                            <td th:text="${auditException.relatedSite != null ? auditException.relatedSite.name + ' / ' + auditException.relatedSite.referenceNumber : '-'}"></td>
+                            <td th:text="${auditException.relatedAudit != null ? auditException.relatedAudit.referenceNumber : '-'}"></td>
                             <td th:text="${auditException.approvedBy != null ? auditException.approvedBy : '-'}"></td>
                             <td th:text="${auditException.approvalDate != null ? #temporals.format(auditException.approvalDate, 'yyyy-MM-dd') : '-'}"></td>
                             <td th:text="${auditException.expiryDate != null ? #temporals.format(auditException.expiryDate, 'yyyy-MM-dd') : '-'}"></td>

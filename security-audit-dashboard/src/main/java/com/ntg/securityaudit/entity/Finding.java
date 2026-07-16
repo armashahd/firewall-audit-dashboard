@@ -15,6 +15,11 @@ public class Finding {
         return id;
     }
 
+    @Transient
+    public String getReferenceNumber() {
+        return formatReferenceNumber("FND", id);
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -172,6 +177,10 @@ public class Finding {
     private LocalDateTime lastUpdatedDate;
 
     public Finding() {
+    }
+
+    private String formatReferenceNumber(String prefix, Long value) {
+        return value == null ? prefix + "-NEW" : "%s-%04d".formatted(prefix, value);
     }
 
 }

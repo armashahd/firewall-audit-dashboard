@@ -27,6 +27,7 @@
                     <table class="table table-striped table-hover align-middle">
                         <thead>
                         <tr>
+                            <th>Site No.</th>
                             <th>Site Name</th>
                             <th>Country</th>
                             <th>City</th>
@@ -41,9 +42,10 @@
                         </thead>
                         <tbody>
                         <tr th:if="${#lists.isEmpty(sites)}">
-                            <td colspan="10" class="text-center py-5 text-muted">No sites available yet.</td>
+                            <td colspan="11" class="text-center py-5 text-muted">No sites available yet.</td>
                         </tr>
                         <tr th:each="site : ${sites}">
+                            <td><a th:href="@{/sites/details/{id}(id=${site.id})}" class="fw-semibold text-decoration-none" th:text="${site.referenceNumber}"></a></td>
                             <td>
                                 <a th:href="@{/sites/details/{id}(id=${site.id})}" class="fw-semibold text-decoration-none" th:text="${site.name}"></a>
                             </td>

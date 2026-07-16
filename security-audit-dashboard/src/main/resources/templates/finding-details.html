@@ -28,7 +28,8 @@
         <div class="card dashboard-card">
             <div class="card-body p-4 p-lg-5">
                 <div class="row g-4">
-                    <div class="col-md-6"><div class="stat-label">Audit</div><div class="fw-semibold fs-5" th:text="${finding.audit != null ? (finding.audit.site != null ? finding.audit.site.name + ' / #' + finding.audit.id : '#' + finding.audit.id) : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Finding No.</div><div class="fw-semibold fs-5" th:text="${finding.referenceNumber}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Audit</div><div class="fw-semibold fs-5" th:text="${finding.audit != null ? (finding.audit.site != null ? finding.audit.site.name + ' / ' + finding.audit.referenceNumber : finding.audit.referenceNumber) : '-'}"></div></div>
                     <div class="col-md-6"><div class="stat-label">Title</div><div class="fw-semibold fs-5" th:text="${finding.title}"></div></div>
                     <div class="col-12"><div class="stat-label">Description</div><div class="fw-semibold" style="white-space:pre-wrap;" th:text="${finding.description != null ? finding.description : '-'}"></div></div>
                     <div class="col-12"><div class="stat-label">Impact</div><div class="fw-semibold" style="white-space:pre-wrap;" th:text="${finding.impact != null ? finding.impact : '-'}"></div></div>

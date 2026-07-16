@@ -28,6 +28,7 @@
                     <table class="table table-striped table-hover align-middle">
                         <thead>
                         <tr>
+                            <th>Report No.</th>
                             <th>File Name</th>
                             <th>Site</th>
                             <th>Device</th>
@@ -40,9 +41,10 @@
                         </thead>
                         <tbody>
                         <tr th:if="${#lists.isEmpty(reports)}">
-                            <td colspan="8" class="text-center py-5 text-muted">No reports found.</td>
+                            <td colspan="9" class="text-center py-5 text-muted">No reports found.</td>
                         </tr>
                         <tr th:each="report : ${reports}">
+                            <td><a th:href="@{/reports/details/{id}(id=${report.id})}" class="fw-semibold text-decoration-none" th:text="${report.referenceNumber}"></a></td>
                             <td><a th:href="@{/reports/details/{id}(id=${report.id})}" class="fw-semibold text-decoration-none" th:text="${report.fileName}"></a></td>
                             <td th:text="${report.siteName != null ? report.siteName : (report.audit != null && report.audit.site != null ? report.audit.site.name : '-')}"></td>
                             <td th:text="${report.deviceModel != null ? report.deviceModel : (report.vendor != null ? report.vendor : '-')}"></td>

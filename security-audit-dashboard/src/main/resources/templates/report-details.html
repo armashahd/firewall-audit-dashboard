@@ -29,7 +29,8 @@
         <div class="card dashboard-card">
             <div class="card-body p-4 p-lg-5">
                 <div class="row g-4">
-                    <div class="col-md-6"><div class="stat-label">Audit</div><div class="fw-semibold fs-5" th:text="${report.audit != null ? (report.audit.site != null ? report.audit.site.name + ' / #' + report.audit.id : '#' + report.audit.id) : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Report No.</div><div class="fw-semibold fs-5" th:text="${report.referenceNumber}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Audit</div><div class="fw-semibold fs-5" th:text="${report.audit != null ? (report.audit.site != null ? report.audit.site.name + ' / ' + report.audit.referenceNumber : report.audit.referenceNumber) : '-'}"></div></div>
                     <div class="col-md-6"><div class="stat-label">File Name</div><div class="fw-semibold fs-5" th:text="${report.fileName != null ? report.fileName : '-'}"></div></div>
                     <div class="col-md-6"><div class="stat-label">File Path</div><div class="fw-semibold fs-5" th:text="${report.filePath != null ? report.filePath : '-'}"></div></div>
                     <div class="col-md-6"><div class="stat-label">Version</div><div class="fw-semibold fs-5" th:text="${report.version != null ? report.version : '-'}"></div></div>

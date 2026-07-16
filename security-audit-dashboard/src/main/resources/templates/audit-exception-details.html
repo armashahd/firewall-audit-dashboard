@@ -28,6 +28,7 @@
         <div class="card dashboard-card">
             <div class="card-body p-4 p-lg-5">
                 <div class="row g-4">
+                    <div class="col-md-6"><div class="stat-label">Exception No.</div><div class="fw-semibold fs-5" th:text="${auditException.referenceNumber}"></div></div>
                     <div class="col-md-6"><div class="stat-label">Exception Name</div><div class="fw-semibold fs-5" th:text="${auditException.exceptionName != null ? auditException.exceptionName : '-'}"></div></div>
                     <div class="col-md-6"><div class="stat-label">Status</div><div>
                         <span th:switch="${auditException.status != null ? auditException.status.name() : ''}">
@@ -37,8 +38,8 @@
                             <span th:case="*" class="badge bg-light text-dark border">N/A</span>
                         </span>
                     </div></div>
-                    <div class="col-md-6"><div class="stat-label">Related Site</div><div class="fw-semibold fs-5" th:text="${auditException.relatedSite != null ? auditException.relatedSite.name : '-'}"></div></div>
-                    <div class="col-md-6"><div class="stat-label">Related Audit</div><div class="fw-semibold fs-5" th:text="${auditException.relatedAudit != null ? ('#' + auditException.relatedAudit.id) : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Related Site</div><div class="fw-semibold fs-5" th:text="${auditException.relatedSite != null ? auditException.relatedSite.name + ' / ' + auditException.relatedSite.referenceNumber : '-'}"></div></div>
+                    <div class="col-md-6"><div class="stat-label">Related Audit</div><div class="fw-semibold fs-5" th:text="${auditException.relatedAudit != null ? auditException.relatedAudit.referenceNumber : '-'}"></div></div>
                     <div class="col-md-6"><div class="stat-label">Approved By</div><div class="fw-semibold fs-5" th:text="${auditException.approvedBy != null ? auditException.approvedBy : '-'}"></div></div>
                     <div class="col-md-6"><div class="stat-label">Approval Date</div><div class="fw-semibold fs-5" th:text="${auditException.approvalDate != null ? #temporals.format(auditException.approvalDate, 'yyyy-MM-dd') : '-'}"></div></div>
                     <div class="col-md-6"><div class="stat-label">Expiry Date</div><div class="fw-semibold fs-5" th:text="${auditException.expiryDate != null ? #temporals.format(auditException.expiryDate, 'yyyy-MM-dd') : '-'}"></div></div>

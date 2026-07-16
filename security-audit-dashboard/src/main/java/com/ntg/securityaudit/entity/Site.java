@@ -40,6 +40,11 @@ public class Site {
         return id;
     }
 
+    @Transient
+    public String getReferenceNumber() {
+        return formatReferenceNumber("STE", id);
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -114,5 +119,9 @@ public class Site {
 
     public void setStatus(SiteStatus status) {
         this.status = status;
+    }
+
+    private String formatReferenceNumber(String prefix, Long value) {
+        return value == null ? prefix + "-NEW" : "%s-%04d".formatted(prefix, value);
     }
 }

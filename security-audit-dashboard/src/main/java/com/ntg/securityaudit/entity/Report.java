@@ -13,6 +13,11 @@ public class Report {
         return id;
     }
 
+    @Transient
+    public String getReferenceNumber() {
+        return formatReferenceNumber("RPT", id);
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -207,6 +212,10 @@ public class Report {
 
     public void setInfoCount(Integer infoCount) {
         this.infoCount = infoCount;
+    }
+
+    private String formatReferenceNumber(String prefix, Long value) {
+        return value == null ? prefix + "-NEW" : "%s-%04d".formatted(prefix, value);
     }
 
     @Id

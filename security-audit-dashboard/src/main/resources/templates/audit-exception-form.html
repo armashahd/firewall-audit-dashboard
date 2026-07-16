@@ -45,7 +45,7 @@
                         <label class="form-label">Related Site</label>
                         <select class="form-select" name="relatedSiteId" th:classappend="${siteError} ? ' is-invalid' : ''">
                             <option value="">Select a site</option>
-                            <option th:each="site : ${sites}" th:value="${site.id}" th:text="${site.name}" th:selected="${selectedSiteId != null and selectedSiteId == site.id}"></option>
+                            <option th:each="site : ${sites}" th:value="${site.id}" th:text="${site.name + ' / ' + site.referenceNumber}" th:selected="${selectedSiteId != null and selectedSiteId == site.id}"></option>
                         </select>
                         <div class="invalid-feedback d-block" th:if="${siteError}" th:text="${siteError}"></div>
                     </div>
@@ -53,7 +53,7 @@
                         <label class="form-label">Related Audit</label>
                         <select class="form-select" name="relatedAuditId" th:classappend="${auditError} ? ' is-invalid' : ''">
                             <option value="">Select an audit</option>
-                            <option th:each="audit : ${audits}" th:value="${audit.id}" th:text="${audit.site != null ? (audit.site.name + ' / #' + audit.id) : ('#' + audit.id)}" th:selected="${selectedAuditId != null and selectedAuditId == audit.id}"></option>
+                            <option th:each="audit : ${audits}" th:value="${audit.id}" th:text="${audit.site != null ? (audit.site.name + ' / ' + audit.referenceNumber) : audit.referenceNumber}" th:selected="${selectedAuditId != null and selectedAuditId == audit.id}"></option>
                         </select>
                         <div class="invalid-feedback d-block" th:if="${auditError}" th:text="${auditError}"></div>
                         <div class="invalid-feedback d-block" th:if="${relationshipError}" th:text="${relationshipError}"></div>

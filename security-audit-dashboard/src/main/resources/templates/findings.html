@@ -92,6 +92,7 @@
                     <table class="table table-striped table-hover align-middle">
                         <thead>
                         <tr>
+                            <th>Finding No.</th>
                             <th>Title</th>
                             <th>Audit</th>
                             <th>Severity</th>
@@ -104,11 +105,12 @@
                         </thead>
                         <tbody>
                         <tr th:if="${#lists.isEmpty(findings)}">
-                            <td colspan="8" class="text-center py-5 text-muted">No findings found.</td>
+                            <td colspan="9" class="text-center py-5 text-muted">No findings found.</td>
                         </tr>
                         <tr th:each="finding : ${findings}">
+                            <td><a th:href="@{/findings/details/{id}(id=${finding.id})}" class="fw-semibold text-decoration-none" th:text="${finding.referenceNumber}"></a></td>
                             <td><a th:href="@{/findings/details/{id}(id=${finding.id})}" class="fw-semibold text-decoration-none" th:text="${finding.title}"></a></td>
-                            <td th:text="${finding.audit != null ? (finding.audit.site != null ? finding.audit.site.name + ' / #' + finding.audit.id : '#' + finding.audit.id) : '-'}"></td>
+                            <td th:text="${finding.audit != null ? (finding.audit.site != null ? finding.audit.site.name + ' / ' + finding.audit.referenceNumber : finding.audit.referenceNumber) : '-'}"></td>
                             <td>
                                 <span th:switch="${finding.severity != null ? finding.severity.name() : ''}">
                                     <span th:case="'CRITICAL'" class="badge bg-danger">Critical</span>

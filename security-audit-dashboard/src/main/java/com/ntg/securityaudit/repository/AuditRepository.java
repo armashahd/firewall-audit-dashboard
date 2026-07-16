@@ -15,4 +15,6 @@ public interface AuditRepository extends JpaRepository<Audit, Long> {
 
     List<Audit> findBySiteId(Long siteId);
 
+    long countBySiteId(Long siteId);
+
 }

@@ -20,7 +20,7 @@
                         <label class="form-label">Site</label>
                         <select class="form-select" name="siteId" th:classappend="${siteError} ? ' is-invalid' : ''">
                             <option value="">Select a site</option>
-                            <option th:each="site : ${sites}" th:value="${site.id}" th:text="${site.name}" th:selected="${selectedSiteId != null and selectedSiteId == site.id}"></option>
+                            <option th:each="site : ${sites}" th:value="${site.id}" th:text="${site.name + ' / ' + site.referenceNumber}" th:selected="${selectedSiteId != null and selectedSiteId == site.id}"></option>
                         </select>
                         <div class="invalid-feedback d-block" th:if="${siteError}" th:text="${siteError}"></div>
                     </div>
